@@ -19,6 +19,7 @@ jobs:
           FB_API_KEY: ${{ secrets.FB_API_KEY }}
           FB_PROJECT_ID: ${{ secrets.FB_PROJECT_ID }}
         run: |
+          mkdir -p android/app/src/main/assets
           cp web/index.html android/app/src/main/assets/index.html
           VER=$(python3 -c "import json;print(json.load(open('version.json'))['version'])")
           BUILD=$(python3 -c "import json;print(json.load(open('version.json'))['build'])")
