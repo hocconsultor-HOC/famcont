@@ -202,6 +202,10 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{outline:none;bor
 .pinfo div{background:var(--bg);border-radius:12px;padding:8px 10px;min-width:0}
 .pinfo span{display:block;font-size:11.5px;color:var(--mut)}
 .pinfo b{display:block;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:13px 14px;border-radius:13px;background:#fff;border:1.5px solid #DADCE0;font-weight:700;font-size:15.5px;color:#1F1F1F;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+.gbtn:active{background:#F7F8F8}
+.orline{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:12.5px;margin:14px 0}
+.orline:before,.orline:after{content:"";flex:1;height:1px;background:var(--line)}
 .pixbox{background:#F6F8FB;border:1px solid #DCE4EF;border-radius:14px;padding:10px;margin-bottom:10px}
 .pxh{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;font-size:14px;color:var(--ink);padding:0 2px 8px}
 .pxh .bk{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--gray);background:#fff;border:1px solid #DCE4EF;padding:3px 10px;border-radius:99px;white-space:nowrap}
@@ -336,10 +340,10 @@ body.home #fab{display:none!important}
 <script>
 'use strict';
 /* ================= Configuração ================= */
-const APP={name:'FAMCONT',version:'1.3.0',build:6,repo:'hocconsultor-HOC/famcont'};
+const APP={name:'FAMCONT',version:'1.4.0',build:7,repo:'hocconsultor-HOC/famcont'};
 APP.apk='https://github.com/'+APP.repo+'/releases/download/app-android/FAMCONT.apk';
 APP.info='https://raw.githubusercontent.com/'+APP.repo+'/main/version.json';
-const FB={apiKey:'AIzaSyDsuh0H-KtQcDOBVQ8WrcGUelo95fImzT8',projectId:'famcont-44007'}; // nuvem (Firebase · projeto FAMCONT, chave pública; a segurança é feita pelas regras do banco)
+const FB={apiKey:'AIzaSyDsuh0H-KtQcDOBVQ8WrcGUelo95fImzT8',projectId:'famcont-44007',googleClient:'207577892432-fmd40r5cfriqngh0cipbu3gsr7aumb7o.apps.googleusercontent.com'}; // nuvem (Firebase · projeto FAMCONT, chave pública; a segurança é feita pelas regras do banco)
 const KEY='famcont.v1',KAUTH='famcont.auth',KMETA='famcont.meta';
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 const CATS={investimento:['📈','Investimento'],doacao:['⛪','Dízimo e doações'],filhos:['🧒','Filhos'],moradia:['🏠','Moradia'],energia:['💡','Luz, água e gás'],transporte:['🚗','Transporte'],educacao:['🎓','Educação'],telecom:['📱','Celular, internet e TV'],saude:['🩺','Saúde'],seguro:['🛡️','Seguros e previdência'],cartao:['💳','Cartões'],emprestimo:['🏦','Empréstimos'],eventos:['🎉','Eventos'],outros:['📌','Outros']};
@@ -782,8 +786,8 @@ function vResumo(){
 function vAjustes(){
   const c=S.cfg; let h='<div class="rgrid"><div>';
   h+='<div class="card set" id="nuvem" style="margin-top:0"><h4>☁️ Sincronizar celular e tablet</h4>';
-  if(auth){h+='<p class="d">Conectado como <b>'+esc(auth.email)+'</b>. Tudo o que você muda aqui aparece nos outros aparelhos conectados com o mesmo e-mail.</p><p class="d">Última sincronização: <b>'+(syncSt.at?new Date(syncSt.at).toLocaleString('pt-BR'):'—')+'</b></p><div class="btns"><button class="btn gold" data-act="syncNow">Sincronizar agora</button><button class="btn ghost" data-act="logout">Sair da conta</button></div>'}
-  else{h+='<p class="d">Entre com o mesmo e-mail e senha no Pixel e no tablet. As contas ficam guardadas na nuvem e se atualizam sozinhas nos dois aparelhos.</p>'+
+  if(auth){h+='<p class="d">Conectado como <b>'+esc(auth.email)+'</b>'+(auth.google?' (conta Google)':'')+'. Tudo o que você muda aqui aparece nos outros aparelhos conectados com o mesmo e-mail.</p><p class="d">Última sincronização: <b>'+(syncSt.at?new Date(syncSt.at).toLocaleString('pt-BR'):'—')+'</b></p><div class="btns"><button class="btn gold" data-act="syncNow">Sincronizar agora</button><button class="btn ghost" data-act="logout">Sair da conta</button></div>'+(auth.google?'':'<div class="orline">ou</div><button class="gbtn" data-act="gLogin"><svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Passar a entrar com minha conta Google</button><p class="err" id="g_aerr" style="margin-top:8px"></p><p class="hint">Mesmo e-mail, mesmas contas: nada se perde.</p>')}
+  else{h+='<p class="d">Entre com a <b>mesma conta Google</b> no Pixel e no tablet. As contas ficam guardadas na nuvem e se atualizam sozinhas nos dois aparelhos.</p>'+'<button class="gbtn" data-act="gLogin"><svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Entrar com Google</button><p class="err" id="g_aerr" style="margin-top:8px"></p><div class="orline">ou com e-mail e senha</div>'+
     '<label class="f">E-mail<input id="a_email" type="email" autocomplete="email" inputmode="email" placeholder="seuemail@gmail.com"></label><label class="f">Senha<input id="a_pw" type="password" autocomplete="current-password" placeholder="mínimo 6 caracteres"></label><p class="err" id="a_err"></p>'+
     '<div class="btns"><button class="btn gold" data-act="login">Entrar</button><button class="btn line" data-act="signup">Criar conta</button></div><div style="text-align:center;margin-top:8px"><button class="lnk" data-act="resetPw">Esqueci a senha</button></div>'}
   h+='</div>';
@@ -804,7 +808,7 @@ function vAjustes(){
 function renderWelcome(){
   document.body.classList.add('welcome');paintLogo();
   $('#view').innerHTML='<div class="card wel"><div class="logo">'+logoInner()+'</div><h2>FAMCONT</h2><p>Controle das contas da família: o que já foi pago, o que vence logo e o que está atrasado, mês a mês.</p>'+
-   (FB.apiKey?'<button class="btn gold" data-act="welSync">Entrar e sincronizar com a nuvem</button>':'')+
+   (FB.apiKey?'<button class="gbtn" data-act="gLogin"><svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Entrar com Google</button><p class="err" id="g_aerr" style="margin-top:8px"></p><button class="btn gold" data-act="welSync">Entrar com e-mail e senha</button>':'')+
    '<button class="btn navy" data-act="importFile">Importar meu arquivo de contas</button><button class="btn line" data-act="importPaste">Colar backup</button>'+
    (window.FAM_SEED?'<button class="btn line" data-act="welSeed">Carregar contas da família</button>':'')+
    '<button class="btn ghost" data-act="welZero">Começar do zero</button><p class="hint" style="margin-top:14px">Consultor Financeiro Henrique Costa · @hocconsultoria</p></div>';
@@ -1005,6 +1009,7 @@ const ACT={
   welZero(){S=blankState();ensureMonth(curKey());ui.month=curKey();save();render()},
   welSeed(){const x=normalize(JSON.parse(JSON.stringify(window.FAM_SEED)));if(x){S=x;ensureMonth(curKey());save();render()}},
   welSync(){S=blankState();save(true);ui.tab='ajustes';render()},
+  gLogin(){googleLogin()},
   login(){doAuth(false)},signup(){doAuth(true)},resetPw(){doReset()},
   logout(el){if(!arm(el,'Confirmar saída'))return;auth=null;store.del(KAUTH);syncSt={st:'local'};render();toast('Você saiu da conta. As contas continuam neste aparelho.')},
   syncNow(){syncNow(true)}
@@ -1054,6 +1059,22 @@ async function doAuth(create){
     toast('Conectado! Sincronizando…');await syncNow(true);render();}
   catch(err){const m=String(err.message||'');e.textContent=m.startsWith('WEAK_PASSWORD')?'Senha fraca: use pelo menos 6 caracteres.':(AERR[m.split(' ')[0]]||(m==='Failed to fetch'?'Sem internet. Tente de novo.':'Não foi possível entrar ('+m+').'))}
 }
+function googleLogin(){
+  if(!(window.FamBridge&&FamBridge.googleSignIn)){toast('O login com Google funciona no app instalado no Android.');return}
+  const e=$('#g_aerr');if(e)e.textContent='Abrindo sua conta Google…';FamBridge.googleSignIn(FB.googleClient);
+}
+window.famGoogle=async(tok,err)=>{
+  const e=$('#g_aerr');
+  if(!tok){if(e)e.textContent=err==='cancelado'?'':('Não foi possível entrar com Google. '+(err||''));return}
+  try{if(e)e.textContent='Conectando…';
+    const j=await api('https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key='+FB.apiKey,{postBody:'id_token='+encodeURIComponent(tok)+'&providerId=google.com',requestUri:'http://localhost',returnIdpCredential:true,returnSecureToken:true});
+    if(!j.idToken){if(e)e.textContent=j.needConfirmation?'Este e-mail já tem conta com senha. Entre com e-mail e senha.':'Não foi possível entrar.';return}
+    if(!S){S=blankState();save(true)}
+    auth={email:j.email,uid:j.localId,idToken:j.idToken,refreshToken:j.refreshToken,exp:now()+Number(j.expiresIn)*1000,google:true};store.set(KAUTH,auth);
+    toast('Conectado com Google ✓ Sincronizando…');ui.tab='meses';await syncNow(true);
+    if(!getM(curKey())&&Object.keys(S.months).some(k=>getM(k)))ensureMonth(curKey());render();
+  }catch(x){if(e)e.textContent='Não foi possível entrar com Google ('+x.message+').'}
+};
 async function doReset(){const e=$('#a_err'),email=$('#a_email').value.trim();if(!FB.apiKey){e.textContent='A nuvem será ativada na versão final do app.';return}if(!email){e.textContent='Digite seu e-mail acima e toque de novo.';return}
   try{await api('https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key='+FB.apiKey,{requestType:'PASSWORD_RESET',email});e.style.color='var(--ok)';e.textContent='Enviamos um e-mail para redefinir a senha.'}catch(err){e.textContent=AERR[String(err.message)]||'Não foi possível enviar.'}}
 async function idToken(){if(auth.exp-now()>120000)return auth.idToken;

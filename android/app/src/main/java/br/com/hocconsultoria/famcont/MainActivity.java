@@ -9,6 +9,17 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.provider.OpenableColumns;
 import org.json.JSONObject;
+import android.os.CancellationSignal;
+import androidx.credentials.Credential;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CredentialManagerCallback;
+import androidx.credentials.CustomCredential;
+import androidx.credentials.GetCredentialRequest;
+import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.GetCredentialCancellationException;
+import androidx.credentials.exceptions.GetCredentialException;
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption;
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
 import android.graphics.Insets;
 import android.net.Uri;
 import android.os.Build;
@@ -150,6 +161,11 @@ public class MainActivity extends Activity {
         return "FAMCONT-backup.json";
     }
 
+    private void googleResult(String token, String err) {
+        String js = "window.famGoogle&&window.famGoogle(" + (token == null ? "null" : JSONObject.quote(token)) + "," + (err == null ? "null" : JSONObject.quote(err)) + ")";
+        runOnUiThread(() -> web.evaluateJavascript(js, null));
+    }
+
     private boolean isDrive(Uri u) { String a = u.getAuthority(); return a != null && a.contains("com.google.android.apps.docs"); }
 
     private void openExternal(String url) {
@@ -185,6 +201,34 @@ public class MainActivity extends Activity {
             it.putExtra(Intent.EXTRA_SUBJECT, title);
             it.putExtra(Intent.EXTRA_TEXT, text);
             runOnUiThread(() -> startActivity(Intent.createChooser(it, title)));
+        }
+
+        @JavascriptInterface
+        public void googleSignIn(String webClientId) {
+            runOnUiThread(() -> {
+                try {
+                    CredentialManager cm = CredentialManager.create(MainActivity.this);
+                    GetSignInWithGoogleOption opt = new GetSignInWithGoogleOption.Builder(webClientId).build();
+                    GetCredentialRequest req = new GetCredentialRequest.Builder().addCredentialOption(opt).build();
+                    cm.getCredentialAsync(MainActivity.this, req, new CancellationSignal(), command -> runOnUiThread(command),
+                        new CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
+                            @Override
+                            public void onResult(GetCredentialResponse r) {
+                                Credential c = r.getCredential();
+                                if (c instanceof CustomCredential && GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(c.getType())) {
+                                    try {
+                                        GoogleIdTokenCredential g = GoogleIdTokenCredential.createFrom(((CustomCredential) c).getData());
+                                        googleResult(g.getIdToken(), null);
+                                    } catch (Exception e) { googleResult(null, "Resposta do Google inválida."); }
+                                } else googleResult(null, "Tipo de credencial inesperado.");
+                            }
+                            @Override
+                            public void onError(GetCredentialException e) {
+                                googleResult(null, (e instanceof GetCredentialCancellationException) ? "cancelado" : (e.getClass().getSimpleName() + ": " + e.getMessage()));
+                            }
+                        });
+                } catch (Exception e) { googleResult(null, "Erro ao abrir o login do Google: " + e.getMessage()); }
+            });
         }
 
         @JavascriptInterface
