@@ -300,7 +300,7 @@ details.fin summary::-webkit-details-marker{display:none}
 <script>
 'use strict';
 /* ================= Configuração ================= */
-const APP={name:'FAMCONT',version:'1.2.0',build:3,repo:'hocconsultor-HOC/famcont'};
+const APP={name:'FAMCONT',version:'1.2.1',build:4,repo:'hocconsultor-HOC/famcont'};
 APP.apk='https://github.com/'+APP.repo+'/releases/download/app-android/FAMCONT.apk';
 APP.info='https://raw.githubusercontent.com/'+APP.repo+'/main/version.json';
 const FB={apiKey:'AIzaSyDsuh0H-KtQcDOBVQ8WrcGUelo95fImzT8',projectId:'famcont-44007'}; // nuvem (Firebase · projeto FAMCONT, chave pública; a segurança é feita pelas regras do banco)
@@ -500,7 +500,7 @@ function vFamilia(){
 }
 function openFam(id){
   const a=id?S.fam.find(x=>x.id===id):{pessoa:'',desc:'',origem:'',compra:'',parcela:null,n:1,inicio:ui.month,dia:5,pix:'',obs:''};
-  const nomes=[...new Set(['Irmã','Sogra (Tia Rita)',...famLive().map(x=>x.pessoa)])];
+  const nomes=[...new Set([...famLive().map(x=>x.pessoa),'Irmã','Irmão','Sogra','Sogro','Mãe','Pai','Cunhado(a)'])];
   sheet('<h3>'+(id?'Editar compromisso':'Novo compromisso familiar')+'</h3>'+
    '<label class="f">Pessoa<input id="g_pessoa" list="g_nomes" maxlength="40" placeholder="Ex.: Irmã" value="'+esc(a.pessoa)+'"><datalist id="g_nomes">'+nomes.map(n=>'<option value="'+esc(n)+'">').join('')+'</datalist></label>'+
    '<label class="f">O que é<input id="g_desc" maxlength="60" placeholder="Ex.: Conserto do carro" value="'+esc(a.desc)+'"></label>'+
