@@ -34,8 +34,8 @@ body.welcome .month,body.welcome .tabs,body.welcome #fab,body.welcome .sync{disp
 main{flex:1;width:100%;max-width:1400px;margin:0 auto;padding:14px 14px calc(var(--tabh) + 96px + var(--sab,env(safe-area-inset-bottom)))}
 /* Navegação */
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:#fff;border-top:1px solid var(--line);padding-bottom:var(--sab,env(safe-area-inset-bottom));height:calc(var(--tabh) + var(--sab,env(safe-area-inset-bottom)));box-shadow:0 -2px 10px rgba(16,24,40,.05)}
-.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11.5px;color:var(--mut);min-width:0}
-.tabs .ti{width:54px;height:32px;display:grid;place-items:center;border-radius:99px;transition:background .15s}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--mut);min-width:0}
+.tabs .ti{width:48px;height:32px;display:grid;place-items:center;border-radius:99px;transition:background .15s}
 .tabs button.on{color:var(--navy);font-weight:700}
 .tabs button.on .ti{background:#F2E6C4}
 #fab{position:fixed;right:18px;bottom:calc(var(--tabh) + 18px + var(--sab,env(safe-area-inset-bottom)));width:62px;height:62px;border-radius:20px;background:linear-gradient(145deg,var(--gold2),var(--gold));color:var(--navy);box-shadow:0 8px 20px rgba(160,122,30,.45);z-index:25;display:grid;place-items:center}
@@ -232,6 +232,41 @@ button.logo{cursor:pointer}
 .agact{display:flex;gap:16px;flex-wrap:wrap;border-top:1px solid #F1EEE6;margin-top:8px;padding-top:8px}
 details.fin summary{cursor:pointer;list-style:none;margin:20px 2px 9px;font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--mut)}
 details.fin summary::-webkit-details-marker{display:none}
+/* Tela inicial: Meses */
+body.home .month{display:none}
+body.home #fab{display:none!important}
+.mtitle{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:2px 2px 12px}
+.mtitle h2{margin:0;font-size:21px;color:var(--navy)}
+.mtitle span{font-size:13px;color:var(--mut)}
+.hero{background:linear-gradient(150deg,var(--navy),#10284A 60%,#1B3B6B);color:#fff;border-radius:24px;padding:18px;position:relative;overflow:hidden;cursor:pointer}
+.hero:after{content:"";position:absolute;right:-50px;top:-50px;width:170px;height:170px;border-radius:50%;border:24px solid rgba(201,165,76,.13)}
+.hero .tag{display:inline-block;background:var(--gold);color:var(--navy);font-size:11.5px;font-weight:800;letter-spacing:.6px;padding:4px 10px;border-radius:99px;text-transform:uppercase}
+.hero h3{color:#fff;font-size:26px;margin:10px 0 2px;position:relative}
+.hero .sub2{color:#CBD5E1;font-size:13.5px;position:relative}
+.hero .row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px;position:relative}
+.hero .row div{background:rgba(255,255,255,.08);border-radius:12px;padding:9px 8px;min-width:0;text-align:center}
+.hero .row b{display:block;font-size:16px}
+.hero .row span{font-size:11px;color:#CBD5E1}
+.hero .go{position:relative;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(145deg,var(--gold2),var(--gold));color:var(--navy);font-weight:800;border-radius:14px;padding:13px;font-size:15.5px}
+.mgrid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr))}
+.mc{padding:14px;cursor:pointer;position:relative;overflow:hidden}
+.mc:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--c,var(--blue))}
+.mc .mh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mc .mh b{font-size:17px;color:var(--navy)}
+.mc .mv{font-size:20px;font-weight:800;margin:8px 0 2px;color:var(--ink)}
+.mc .ml2{font-size:12.5px;color:var(--mut);line-height:1.45}
+.mc .mf{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.mc .mf span{font-size:12px;font-weight:700;background:var(--bg);border-radius:99px;padding:3px 9px;color:var(--ink)}
+.mc .open{margin-top:10px;font-weight:800;color:#9A7A22;font-size:14px}
+.mc.fut{--c:var(--blue)}.mc.ok{--c:var(--ok)}.mc.bad{--c:var(--bad)}.mc.prev{--c:#B8BEC8}
+.fx{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.fx div{background:var(--bg);border-radius:12px;padding:10px;text-align:center;min-width:0}
+.fx b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx span{font-size:11.5px;color:var(--mut)}
+.fl{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #F1EEE6;font-size:14px}
+.fl span:last-child{font-weight:700;white-space:nowrap}
+.pend{display:flex;justify-content:space-between;gap:10px;padding:7px 10px;border-radius:10px;background:var(--badb);color:#7A1F17;font-size:13.5px;margin-top:6px}
+.ml{cursor:pointer}
 /* Telas largas: tablet e celular deitado */
 @media (min-width:700px){
   .month{order:0;flex-basis:380px;flex-grow:0}
@@ -276,7 +311,7 @@ details.fin summary::-webkit-details-marker{display:none}
       <div class="brand"><button class="logo" id="hdrLogo" data-act="logoMenu" aria-label="Imagem do app">F</button><div style="min-width:0"><b>FAMCONT</b><small>Contas da Família Martins&amp;Costa</small></div></div>
       <div class="month">
         <button data-act="prev" aria-label="Mês anterior"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
-        <div class="ml" id="ml"></div>
+        <div class="ml" id="ml" data-act="goHome" title="Ver todos os meses"></div>
         <button data-act="next" aria-label="Próximo mês"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
       </div>
       <button class="sync" id="sync" data-act="goSync"><i></i><span>Neste aparelho</span></button>
@@ -285,6 +320,7 @@ details.fin summary::-webkit-details-marker{display:none}
   <main id="view"></main>
   <button id="fab" data-act="add" aria-label="Nova conta"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
   <nav class="tabs">
+    <button data-act="tab" data-tab="meses"><span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="4" width="7.5" height="7.5" rx="2"/><rect x="3" y="14.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="14.5" width="7.5" height="7.5" rx="2"/></svg></span>Meses</button>
     <button data-act="tab" data-tab="contas"><span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span>Contas</button>
     <button data-act="tab" data-tab="familia"><span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><circle cx="17" cy="9.5" r="2.4"/><path d="M3.5 19.5c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5M14.8 15.2c.7-.5 1.4-.7 2.2-.7 2 0 3.5 1.4 4 4.2"/></svg></span>Familiares<span class="tbadge" id="famBadge" hidden></span></button>
     <button data-act="tab" data-tab="semanas"><span class="ti"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M16 3v4M8 3v4M3 10h18M8 15l2 2 4-4"/></svg></span>Semanas</button>
@@ -300,7 +336,7 @@ details.fin summary::-webkit-details-marker{display:none}
 <script>
 'use strict';
 /* ================= Configuração ================= */
-const APP={name:'FAMCONT',version:'1.2.2',build:5,repo:'hocconsultor-HOC/famcont'};
+const APP={name:'FAMCONT',version:'1.3.0',build:6,repo:'hocconsultor-HOC/famcont'};
 APP.apk='https://github.com/'+APP.repo+'/releases/download/app-android/FAMCONT.apk';
 APP.info='https://raw.githubusercontent.com/'+APP.repo+'/main/version.json';
 const FB={apiKey:'AIzaSyDsuh0H-KtQcDOBVQ8WrcGUelo95fImzT8',projectId:'famcont-44007'}; // nuvem (Firebase · projeto FAMCONT, chave pública; a segurança é feita pelas regras do banco)
@@ -355,7 +391,7 @@ const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){retu
 
 /* ================= Estado ================= */
 let S=null;
-let ui={tab:'contas',month:curKey(),filter:'todas',pessoa:'',undo:null};
+let ui={tab:'meses',month:curKey(),filter:'todas',pessoa:'',undo:null};
 let meta=store.get(KMETA)||{lastBackup:null};
 let storageOk=true;
 
@@ -554,18 +590,90 @@ function pixBox(a){
 }
 function pixKey(s){const m=String(s||'').match(/\d{3}\.?\d{3}\.?\d{3}-?\d{2}|\d{11,14}|[\w.+-]+@[\w-]+\.[\w.]+|\+?\d[\d\s()-]{9,}/);return m?m[0]:String(s||'')}
 
+/* ================= Meses e fechamento ================= */
+function weekCount(k){const p=pk(k),n=dim(k);let g=[],cur=null;for(let d=1;d<=n;d++){const wd=new Date(p[0],p[1]-1,d).getDay();if(wd===0||wd===6)continue;if(!cur||wd===1){cur=[];g.push(cur)}cur.push(d)}
+  if(g.length>1&&g[0].length<3){g[1]=g[0].concat(g[1]);g.shift()}if(g.length>1&&g[g.length-1].length<3){const l=g.pop();g[g.length-1]=g[g.length-1].concat(l)}return g.length}
+// números do mês: contas fixas + contas familiares + semanas dos filhos
+function monthNums(k){
+  const M=getM(k),F=famMonth(k),fT=F.reduce((s,x)=>s+(x.a.parcela||0),0),fP=F.filter(x=>x.st.k==='pago'),fPv=fP.reduce((s,x)=>s+(x.a.parcela||0),0);
+  if(M){const bl=live(M.bills),T=totals(k,bl);let wt=0,wp=0,wn=0,wd=0;live(M.weeks).forEach(w=>live(w.items).forEach(i=>{wn++;if(i.done)wd++;if(i.amount!=null){wt+=i.amount;if(i.done)wp+=i.amount}}));
+    const pend=bl.filter(b=>{const s=status(b,k).k;return s!=='pago'&&s!=='futuro'});
+    return {open:true,T,bills:bl,pend,fam:F,famPend:F.filter(x=>x.st.k!=='pago'),fT,fPv,fN:F.length,fPaid:fP.length,wt,wp,wn,wd,total:T.tot+fT+wt,pago:T.pago+fPv+wp,
+      itens:T.n+F.length+wn,itensPagos:T.nPago+fP.length+wd,semValor:T.semValor}}
+  // mês ainda não aberto: previsão a partir do último mês aberto
+  const prevs=Object.keys(S.months).filter(x=>x<k&&getM(x)).sort(),src=prevs.length?getM(prevs[prevs.length-1]):null;
+  const rec=src?live(src.bills).filter(b=>b.freq!=='unica'&&b.status!=='futuro'):[],wc=weekCount(k);
+  const bt=rec.reduce((s,b)=>s+(b.amount==null?0:(b.freq==='semanal'?b.amount*wc:b.amount)),0);
+  const wt=(S.cfg.weekly||[]).reduce((s,t)=>s+(t.amount||0),0)*wc;
+  return {open:false,nBills:rec.length,semValor:rec.filter(b=>b.amount==null).length,fam:F,famPend:F,fT,fPv:0,fN:F.length,fPaid:0,wt,wn:(S.cfg.weekly||[]).length*wc,total:bt+fT+wt,pago:0,itens:rec.length+F.length,itensPagos:0}
+}
+function closeState(k){ // fechamento automático: meses que já terminaram
+  const n=monthNums(k);if(!n.open)return null;const pend=n.pend.length+n.famPend.length+(n.wn-n.wd);
+  return {pend,ok:pend===0}
+}
+function vMeses(){
+  const ck=curKey(),n=monthNums(ck),pct=n.itens?Math.round(n.itensPagos/n.itens*100):0,atr=n.open?n.pend.filter(b=>status(b,ck).k==='atrasado').length+n.famPend.filter(x=>x.st.k==='atrasado').length:0;
+  let h=updBanner()+'<div class="mtitle"><h2>Meses</h2><span>Toque em um mês para entrar</span></div>';
+  h+='<div class="hero" data-act="goMonth2" data-k="'+ck+'"><span class="tag">Mês atual</span><h3>'+MESES[pk(ck)[1]-1]+' '+pk(ck)[0]+'</h3><div class="sub2">'+(n.open?brl(n.pago)+' pagos de '+brl(n.total)+' · '+pct+'% dos pagamentos feitos':'Ainda não aberto · toque para abrir com as contas fixas')+'</div>'+
+   (n.open?'<div class="prog"><i style="width:'+pct+'%"></i></div>':'')+
+   '<div class="row"><div><b>'+(n.open?n.T.nPago+'/'+n.T.n:n.nBills)+'</b><span>Contas</span></div><div><b>'+n.fN+'</b><span>Familiares</span></div><div><b>'+(n.open?n.wd+'/'+n.wn:n.wn)+'</b><span>Semanas</span></div><div><b style="color:'+(atr?'#FFA197':'#86EFAC')+'">'+atr+'</b><span>Atrasadas</span></div></div>'+
+   '<div class="go">Entrar em '+MESES[pk(ck)[1]-1]+' ›</div></div>';
+  // meses anteriores que ainda têm pendência (fechamento pendente)
+  const prev=Object.keys(S.months).filter(x=>x<ck&&getM(x)).sort().reverse();
+  const pendPrev=prev.filter(x=>!closeState(x).ok);
+  if(pendPrev.length)h+='<div class="gh st-atrasado"><span class="dot"></span>Meses anteriores com pendência</div><div class="mgrid">'+pendPrev.map(k=>mCard(k,'past')).join('')+'</div>';
+  h+='<div class="gh st-emdia"><span class="dot"></span>Próximos 6 meses</div><div class="mgrid">'+[1,2,3,4,5,6].map(i=>mCard(shiftKey(ck,i),'fut')).join('')+'</div>';
+  const fech=prev.filter(x=>closeState(x).ok);
+  if(fech.length)h+='<details class="fin"><summary>▸ Meses fechados ('+fech.length+')</summary><div class="mgrid">'+fech.map(k=>mCard(k,'past')).join('')+'</div></details>';
+  h+='<p class="hint" style="margin-top:14px">💡 Os meses futuros mostram uma <b>previsão</b> feita com as contas fixas, as parcelas familiares e as semanas. Quando um mês termina, o FAMCONT faz o <b>fechamento</b> sozinho: mostra o que foi pago e o que ficou pendente.</p>';
+  return h;
+}
+function mCard(k,kind){
+  const n=monthNums(k),nm=MESES[pk(k)[1]-1]+' '+pk(k)[0];
+  if(kind==='past'){const c=closeState(k);
+    return '<div class="card mc '+(c.ok?'ok':'bad')+'" data-act="fech" data-k="'+k+'"><div class="mh"><b>'+nm+'</b><span class="pill p-'+(c.ok?'pago':'atrasado')+'">'+(c.ok?'Fechado ✓':'Fechamento: '+c.pend+' pendente'+(c.pend>1?'s':''))+'</span></div><div class="mv">'+brl(n.pago)+'</div><div class="ml2">pagos de '+brl(n.total)+' previstos</div><div class="open">Ver fechamento ›</div></div>'}
+  const fam=n.fN?'<span>👪 '+n.fN+' familiar'+(n.fN>1?'es':'')+' · '+brl(n.fT)+'</span>':'<span>👪 0 familiares</span>';
+  return '<div class="card mc fut" data-act="goMonth2" data-k="'+k+'"><div class="mh"><b>'+nm+'</b><span class="pill p-'+(n.open?'emdia':'apagar')+'">'+(n.open?'Aberto':'Previsão')+'</span></div>'+
+   '<div class="mv">'+brl(n.total)+'</div><div class="ml2">'+(n.open?'previsto · '+n.T.nPago+' de '+n.T.n+' contas pagas':'previsto · '+n.nBills+' contas fixas')+(n.semValor?' · '+n.semValor+' sem valor':'')+'</div>'+
+   '<div class="mf">'+fam+'<span>🧒 '+n.wn+' pagamentos semanais</span></div><div class="open">'+(n.open?'Entrar ›':'Abrir o mês ›')+'</div></div>';
+}
+function openFech(k){
+  const n=monthNums(k),ck=curKey(),past=k<ck,c=closeState(k),pct=n.itens?n.itensPagos/n.itens:0;
+  if(!n.open)return;
+  let h='<h3>'+(past?'Fechamento':'Prévia do fechamento')+' · '+mName(k)+'</h3>'+(past?'<span class="pill p-'+(c.ok?'pago':'atrasado')+'">'+(c.ok?'Mês fechado ✓ tudo pago':'Fechado com '+c.pend+' pagamento'+(c.pend>1?'s':'')+' pendente'+(c.pend>1?'s':''))+'</span>':'<span class="pill p-logo">Mês em andamento · números até hoje</span>');
+  h+='<div class="gauge" style="margin-top:12px">'+ring(pct,pct>=1?'#1E8E5A':pct>=.7?'#B26B00':'#C8372D')+'<p><b>'+n.itensPagos+' de '+n.itens+'</b> pagamentos feitos.<br><span class="hint">'+(pct>=1?'Excelente: todas as obrigações do mês foram cumpridas.':past?'Os itens pendentes continuam marcados como atrasados e aparecem em destaque no mês seguinte.':'Faltam '+(n.itens-n.itensPagos)+' pagamentos até o fim do mês.')+'</span></p></div>';
+  h+='<div class="fx"><div><b>'+brl(n.total)+'</b><span>Previsto</span></div><div><b style="color:var(--ok)">'+brl(n.pago)+'</b><span>Pago</span></div><div><b style="color:var(--bad)">'+brl(n.total-n.pago)+'</b><span>Não pago</span></div></div>';
+  h+='<div class="fl"><span>📋 Contas fixas</span><span>'+n.T.nPago+' de '+n.T.n+' · '+brl(n.T.pago)+'</span></div>'+
+     '<div class="fl"><span>👪 Contas familiares</span><span>'+n.fPaid+' de '+n.fN+' · '+brl(n.fPv)+'</span></div>'+
+     '<div class="fl"><span>🧒 Semanas dos filhos</span><span>'+n.wd+' de '+n.wn+' · '+brl(n.wp)+'</span></div>'+
+     (S.cfg.renda?'<div class="fl"><span>🧭 Renda comprometida</span><span>'+Math.round(n.total/S.cfg.renda*100)+'%</span></div>':'')+
+     (n.semValor?'<p class="hint" style="margin-top:8px">⚠️ '+n.semValor+' conta(s) sem valor ficam fora dos valores em R$.</p>':'');
+  const wk=live(getM(k).weeks).map((w,i)=>{const its=live(w.items).filter(x=>!x.done);return its.length?{t:'🧒 Semana '+(i+1)+' ('+fmtD(w.start)+' a '+fmtD(w.end)+') · '+its.length+' ite'+(its.length>1?'ns':'m')+': '+its.map(x=>x.name).join(', '),v:its.some(x=>x.amount!=null)?its.reduce((s,x)=>s+(x.amount||0),0):null}:null}).filter(Boolean);
+  const pend=[...n.pend.map(b=>({t:b.name+(b.day?' · dia '+b.day:''),v:amtOf(b,k)})),...n.famPend.map(x=>({t:'👪 '+x.a.pessoa+' · '+x.a.desc,v:x.a.parcela})),...wk];
+  const np=n.pend.length+n.famPend.length+(n.wn-n.wd);
+  if(pend.length)h+='<h4 style="margin:14px 0 4px;color:var(--navy)">'+(past?'Ficou pendente':'Ainda falta pagar')+' · '+np+' pagamento'+(np>1?'s':'')+'</h4>'+pend.map(x=>'<div class="pend"><span>'+esc(x.t)+'</span><b>'+(x.v!=null?brl(x.v):'—')+'</b></div>').join('');
+  h+='<div class="actions" style="margin-top:14px"><button class="btn line" data-act="shareFech" data-k="'+k+'">Compartilhar</button><button class="btn gold" data-act="goMonth2" data-k="'+k+'">Entrar em '+MESES[pk(k)[1]-1]+'</button></div>';
+  sheet(h);
+}
+function fechText(k){const n=monthNums(k),past=k<curKey();
+  let t='📊 FAMCONT · '+(past?'Fechamento':'Prévia do fechamento')+' de '+mName(k)+'\n\n✅ Pago: '+brl(n.pago)+' de '+brl(n.total)+' ('+n.itensPagos+' de '+n.itens+' pagamentos)\n📋 Contas fixas: '+n.T.nPago+'/'+n.T.n+'\n👪 Contas familiares: '+n.fPaid+'/'+n.fN+'\n🧒 Semanas: '+n.wd+'/'+n.wn+'\n';
+  const pend=[...n.pend.map(b=>'• '+b.name+(b.day?' (dia '+b.day+')':'')),...n.famPend.map(x=>'• '+x.a.pessoa+' – '+x.a.desc),...(n.wn-n.wd?['• Semanas dos filhos: '+(n.wn-n.wd)+' pagamento(s)']:[])];
+  if(pend.length)t+='\n⚠️ '+(past?'Ficou pendente':'Falta pagar')+':\n'+pend.join('\n')+'\n';
+  return t+'\nConsultor Financeiro Henrique Costa · @hocconsultoria'}
+
 /* ================= Desenho das telas ================= */
 function render(){
   if(!S){renderWelcome();return}
   document.body.classList.remove('welcome');
   paintLogo();
   const p=pk(ui.month),ck=curKey();
-  $('#ml').innerHTML=MESES[p[1]-1]+' '+p[0]+'<small>'+(ui.month===ck?'mês atual':ui.month<ck?'mês anterior':'mês futuro')+'</small>';
+  $('#ml').innerHTML=MESES[p[1]-1]+' '+p[0]+'<small>'+(ui.month===ck?'mês atual':ui.month<ck?'mês anterior':'mês futuro')+' · ▦ ver meses</small>';
+  document.body.classList.toggle('home',ui.tab==='meses');
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===ui.tab));
   $('#fab').style.display=((ui.tab==='contas'&&getM(ui.month))||ui.tab==='familia')?'grid':'none';
   const fp=famMonth(ui.month).filter(x=>x.st.k!=='pago'),fb=$('#famBadge');fb.hidden=!fp.length;fb.textContent=fp.length;fb.className='tbadge'+(fp.some(x=>x.st.k==='atrasado')?'':' g');
   const v=$('#view');
-  v.innerHTML=ui.tab==='contas'?vContas():ui.tab==='familia'?vFamilia():ui.tab==='semanas'?vSemanas():ui.tab==='resumo'?vResumo():vAjustes();
+  v.innerHTML=ui.tab==='meses'?vMeses():ui.tab==='contas'?vContas():ui.tab==='familia'?vFamilia():ui.tab==='semanas'?vSemanas():ui.tab==='resumo'?vResumo():vAjustes();
   renderSync();
 }
 function vEmptyMonth(k){
@@ -641,11 +749,12 @@ function ring(p,color){const r=36,c=2*Math.PI*r,v=Math.max(0,Math.min(1,p));
   return '<svg class="ring" viewBox="0 0 86 86"><circle cx="43" cy="43" r="'+r+'" fill="none" stroke="#EEF0F3" stroke-width="9"/><circle cx="43" cy="43" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="9" stroke-linecap="round" stroke-dasharray="'+(c*v)+' '+c+'" transform="rotate(-90 43 43)"/><text x="43" y="49" text-anchor="middle" font-size="18" font-weight="700" fill="#14213D">'+Math.round(p*100)+'%</text></svg>'}
 function vResumo(){
   const k=ui.month,M=getM(k); if(!M)return vEmptyMonth(k);
+  const fbtn='<div class="banner '+(k<curKey()?(closeState(k).ok?'ok':'bad'):'info')+'" data-act="fech" data-k="'+k+'"><span class="bi">🧾</span><span><b>'+(k<curKey()?'Fechamento de ':'Prévia do fechamento de ')+mName(k)+'</b>'+(k<curKey()?(closeState(k).ok?' · tudo pago ✓':' · '+closeState(k).pend+' pendência(s)'):' · como o mês está até hoje')+'</span><span class="go">Ver</span></div>';
   const bills=live(M.bills),T=totals(k,bills);
   let wt=0,wp=0; live(M.weeks).forEach(w=>live(w.items).forEach(i=>{if(i.amount!=null){wt+=i.amount;if(i.done)wp+=i.amount}}));
   const FM=famMonth(k),ft=FM.reduce((s,x)=>s+(x.a.parcela||0),0),fp=FM.filter(x=>x.st.k==='pago').reduce((s,x)=>s+(x.a.parcela||0),0),fa=FM.filter(x=>x.st.k==='atrasado').reduce((s,x)=>s+(x.a.parcela||0),0);
   const total=T.tot+wt+ft,pago=T.pago+wp+fp;
-  let h='<div class="rgrid"><div><div class="card sec" style="margin-top:0"><h4>📊 '+mName(k)+' em números</h4><div class="kv">'+
+  let h=fbtn+'<div class="rgrid" style="margin-top:12px"><div><div class="card sec" style="margin-top:0"><h4>📊 '+mName(k)+' em números</h4><div class="kv">'+
    '<div><span>Total previsto</span><b>'+brl(total)+'</b></div><div><span>Já pago</span><b style="color:var(--ok)">'+brl(pago)+'</b></div>'+
    '<div><span>Falta pagar</span><b>'+brl(total-pago)+'</b></div><div><span>Em atraso</span><b style="color:var(--bad)">'+brl(T.atras+fa)+'</b></div>'+
    '<div><span>Contas fixas</span><b>'+brl(T.tot)+'</b></div><div><span>Semanas dos filhos</span><b>'+brl(wt)+'</b></div><div><span>Contas familiares</span><b>'+brl(ft)+'</b></div><div><span>Parcelas familiares</span><b>'+FM.length+'</b></div></div>'+
@@ -791,7 +900,11 @@ const ACT={
   prev(){ui.month=shiftKey(ui.month,-1);ui.filter=ui.filter==='semvalor'?'todas':ui.filter;render();scrollTo(0,0)},
   next(){ui.month=shiftKey(ui.month,1);ui.filter=ui.filter==='semvalor'?'todas':ui.filter;render();scrollTo(0,0)},
   goMonth(el){ui.month=el.dataset.k;ui.filter='atrasadas';render();scrollTo(0,0)},
-  tab(el){ui.tab=el.dataset.tab;render();scrollTo(0,0)},
+  tab(el){ui.tab=el.dataset.tab;if(ui.tab!=='meses'&&ui.tab!=='ajustes'&&!getM(ui.month)&&ui.month<=curKey()&&Object.keys(S.months).some(k=>getM(k)))ensureMonth(ui.month);render();scrollTo(0,0)},
+  goHome(){ui.tab='meses';render();scrollTo(0,0)},
+  goMonth2(el){const k=el.dataset.k;closeSheet();ui.month=k;if(!getM(k)){ensureMonth(k);toast(mName(k)+' aberto com as contas fixas')}ui.tab='contas';ui.filter='todas';render();scrollTo(0,0)},
+  fech(el){openFech(el.dataset.k)},
+  shareFech(el){shareText('Fechamento FAMCONT',fechText(el.dataset.k))},
   goSync(){ui.tab='ajustes';render();scrollTo(0,0)},
   filter(el){ui.filter=el.dataset.f;render()},
   pessoa(el){ui.pessoa=el.dataset.p;render()},
@@ -973,7 +1086,7 @@ window.famResume=()=>{if(S&&!getM(curKey())&&Object.keys(S.months).length){ensur
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')window.famResume()});
 window.addEventListener('online',()=>syncNow());
 setInterval(()=>{if(document.visibilityState==='visible')syncNow()},30000);
-window.famBack=()=>{if(sheetOpen()){closeSheet();return true}if(ui.tab!=='contas'){ui.tab='contas';render();return true}if(ui.month!==curKey()){ui.month=curKey();render();return true}return false};
+window.famBack=()=>{if(sheetOpen()){closeSheet();return true}if(ui.tab!=='meses'){ui.tab='meses';render();scrollTo(0,0);return true}if(ui.month!==curKey()){ui.month=curKey();render();return true}return false};
 
 /* ================= Início ================= */
 (function init(){

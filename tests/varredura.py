@@ -33,12 +33,12 @@ async def main():
             pg.on('pageerror',lambda e: errs.append(str(e))); pg.on('console',lambda m: errs.append(m.text) if m.type=='error' and 'raw.githubusercontent' not in m.text and 'Failed to load resource' not in m.text else None)
             await pg.route('**/version.json*',lambda r: r.fulfill(status=200,content_type='application/json',body='{"version":"0.0.0","build":0}'))
             await pg.goto(url); await pg.wait_for_timeout(300); over=[]
-            for t in ('contas','familia','semanas','resumo','ajustes'):
+            for t in ('meses','contas','familia','semanas','resumo','ajustes'):
                 await pg.click(f'.tabs [data-tab={t}]'); await pg.wait_for_timeout(120)
                 sw=await pg.evaluate('document.documentElement.scrollWidth')
                 if sw>w+1: over.append(f'{t}:{sw}')
             sub=await pg.evaluate("(()=>{const e=document.querySelector('.brand small');return e.scrollWidth<=e.clientWidth+1})()")
-            ok(f'[{nome}] 5 abas abrem sem erro de JavaScript',not errs,errs[:2]); ok(f'[{nome}] nada vaza para os lados',not over,over); ok(f'[{nome}] subtítulo Martins&Costa cabe inteiro',sub)
+            ok(f'[{nome}] 6 abas abrem sem erro de JavaScript',not errs,errs[:2]); ok(f'[{nome}] nada vaza para os lados',not over,over); ok(f'[{nome}] subtítulo Martins&Costa cabe inteiro',sub)
             await ctx.close()
         # ---------- fluxos completos (Pixel 9) ----------
         ctx=await br.new_context(viewport={'width':412,'height':915},has_touch=True,locale='pt-BR',permissions=['clipboard-read','clipboard-write']); pg=await ctx.new_page(); errs=[]
@@ -46,6 +46,11 @@ async def main():
         await pg.route('**/version.json*',lambda r: r.fulfill(status=200,content_type='application/json',body='{"version":"9.9.9","build":999,"notes":"Teste"}'))
         await pg.goto(url); await pg.wait_for_timeout(500)
         ev=lambda js: pg.evaluate(js)
+        ok('Abre na tela Meses (mês atual + próximos 6)',await pg.query_selector('.hero') is not None and len(await pg.query_selector_all('.mgrid .mc.fut'))==6)
+        prev=await pg.inner_text('.mgrid .mc.fut >> nth=0'); ok('Previsão de dezembro inclui contas fixas e familiares',('Previsão' in prev and '500' in prev),prev.replace(chr(10),' | '))
+        await pg.click('.hero'); ok('Tocar no mês atual entra nas contas',await pg.query_selector('.progt') is not None)
+        await pg.click('#ml'); ok('Tocar no nome do mês volta para Meses',await pg.query_selector('.hero') is not None)
+        await pg.click('.hero')
         ok('Cabeçalho: "Contas da Família Martins&Costa"',(await pg.inner_text('.brand small'))=='Contas da Família Martins&Costa')
         st=await ev("['b1','b2','b3','b5'].map(id=>status(getM('2026-11').bills.find(b=>b.id===id),'2026-11').k)")
         ok('Situações: atrasada (dia 10), vence logo (dia 20), paga, planejada',st==['atrasado','logo','pago','futuro'],st)
@@ -58,7 +63,8 @@ async def main():
         a=await ev("getM('2026-11').bills.find(b=>b.name==='Condomínio teste').amount"); ok('Incluir conta com valor 1.234,56',a==1234.56,a)
         await pg.click('.bill >> text=Condomínio teste'); await pg.click('[data-act=del]'); await pg.click('[data-act=del]')
         ok('Excluir conta (com confirmação)',await ev("live(getM('2026-11').bills).every(b=>b.name!=='Condomínio teste')"))
-        await pg.click('[data-act=next]'); await pg.click('[data-act=openMonth]')
+        await pg.click('[data-act=goHome]'); await pg.click('.mgrid .mc.fut >> nth=0'); await pg.wait_for_timeout(150)
+        ok('Tocar em dezembro abre o mês sozinho',await ev("!!getM('2026-12')&&ui.month==='2026-12'&&ui.tab==='contas'"))
         d=await ev("({n:live(getM('2026-12').bills).length,abertas:live(getM('2026-12').bills).filter(b=>b.status==='aberto').length,w:getM('2026-12').weeks.map(w=>w.start.slice(8)+'-'+w.end.slice(8))})")
         ok('Abrir dezembro copia contas fixas (sem as de uma vez)',d['n']==6 and d['abertas']==5,d)
         ok('Semanas de dezembro corretas',d['w']==['01-04','07-11','14-18','21-25','28-31'],d['w'])
@@ -76,6 +82,11 @@ async def main():
         f2=await ev("(()=>{const a=famLive().find(a=>a.pessoa==='Parente B');return a?[a.pixTipo,a.pixChave,famKeys(a)]:null})()")
         ok('Novo compromisso com chave Celular e meses gerados',f2==['Celular','(21) 99876-5432',['2027-01','2027-02','2027-03']],f2)
         await pg.click('[data-act=next]'); await pg.click('[data-act=next]'); hi=await ev("famMonth('2027-01').length"); ok('Janeiro passa a mostrar 1 depois de incluir',hi==1,hi)
+        # fechamento do mês
+        await pg.click('[data-act=goHome]'); await pg.click('.hero'); await pg.click('.tabs [data-tab=resumo]'); await pg.click('.banner[data-act=fech]'); await pg.wait_for_timeout(150)
+        t=await pg.inner_text('#sheetCard'); ok('Prévia do fechamento abre no Resumo',('Prévia do fechamento' in t and 'Contas fixas' in t and 'Contas familiares' in t),t[:80])
+        await pg.click('.sheet-bg',position={'x':5,'y':5})
+        fz=await ev("(()=>{const c=closeState('2026-11');return [c.ok,c.pend]})()"); ok('Fechamento conta as pendências do mês',fz[0]==False and fz[1]>0,fz)
         # imagem do app
         await pg.click('#hdrLogo'); 
         async with pg.expect_file_chooser() as fc: await pg.click('[data-act=logoPick]')
