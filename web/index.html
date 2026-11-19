@@ -300,7 +300,7 @@ details.fin summary::-webkit-details-marker{display:none}
 <script>
 'use strict';
 /* ================= Configuração ================= */
-const APP={name:'FAMCONT',version:'1.2.1',build:4,repo:'hocconsultor-HOC/famcont'};
+const APP={name:'FAMCONT',version:'1.2.2',build:5,repo:'hocconsultor-HOC/famcont'};
 APP.apk='https://github.com/'+APP.repo+'/releases/download/app-android/FAMCONT.apk';
 APP.info='https://raw.githubusercontent.com/'+APP.repo+'/main/version.json';
 const FB={apiKey:'AIzaSyDsuh0H-KtQcDOBVQ8WrcGUelo95fImzT8',projectId:'famcont-44007'}; // nuvem (Firebase · projeto FAMCONT, chave pública; a segurança é feita pelas regras do banco)
@@ -359,8 +359,7 @@ let ui={tab:'contas',month:curKey(),filter:'todas',pessoa:'',undo:null};
 let meta=store.get(KMETA)||{lastBackup:null};
 let storageOk=true;
 
-function blankState(){return {v:1,cfg:{renda:null,people:['Família','Henrique','Gabi','Manu','Dudu','Mãe'],
-  weekly:[{name:'Táxi',amount:null},{name:'Psicopedagoga Dudu',amount:null},{name:'Fono Dudu',amount:null},{name:'Explicadora Manu',amount:null}],u:0},months:{},fam:[]}}
+function blankState(){return {v:1,cfg:{renda:null,people:['Família'],weekly:[],u:0},months:{},fam:[]}}
 function normalize(x){
   if(!x||typeof x!=='object')return null;
   if(x.data&&x.app==='FAMCONT')x=x.data;
@@ -684,7 +683,7 @@ function vAjustes(){
   h+='<div class="card set"><h4>👨‍👩‍👧‍👦 Pessoas</h4><p class="d">Nomes usados para filtrar as contas. Separe por vírgula.</p><label class="f"><input id="s_people" value="'+esc(c.people.join(', '))+'"></label><button class="btn navy" style="width:100%" data-act="savePeople">Salvar pessoas</button></div>';
   h+='</div><div>';
   h+='<div class="card set" style="margin-top:0"><h4>🗓️ Itens padrão das semanas</h4><p class="d">Esta lista entra automaticamente em cada semana dos meses novos.</p>'+c.weekly.map((t,i)=>'<div class="tpl"><span>'+esc(t.name)+(t.amount!=null?' · <b>'+brl(t.amount)+'</b>':'')+'</span><button class="x lnk" data-act="tplDel" data-i="'+i+'" style="color:var(--bad)">Remover</button></div>').join('')+
-    '<div class="row2" style="margin-top:10px"><label class="f">Novo item<input id="t_name" placeholder="Ex.: Natação Manu"></label><label class="f">Valor (opcional)<input id="t_amt" inputmode="decimal" placeholder="0,00"></label></div><div class="btns"><button class="btn line" data-act="tplAdd">Adicionar à lista</button><button class="btn ghost" data-act="rebuildWeeks">Aplicar lista nas semanas deste mês</button></div></div>';
+    '<div class="row2" style="margin-top:10px"><label class="f">Novo item<input id="t_name" placeholder="Ex.: Natação"></label><label class="f">Valor (opcional)<input id="t_amt" inputmode="decimal" placeholder="0,00"></label></div><div class="btns"><button class="btn line" data-act="tplAdd">Adicionar à lista</button><button class="btn ghost" data-act="rebuildWeeks">Aplicar lista nas semanas deste mês</button></div></div>';
   h+=driveCard();
   h+='<div class="card set"><h4>💾 Cópia de segurança</h4><p class="d">Guarde um arquivo com todas as contas (por exemplo no Google Drive ou WhatsApp). Também serve para passar as contas para outro aparelho.'+(meta.lastBackup?' Último backup: <b>'+new Date(meta.lastBackup).toLocaleDateString('pt-BR')+'</b>.':'')+'</p>'+
     '<div class="btns"><button class="btn navy" data-act="exportFile">Salvar arquivo</button><button class="btn line" data-act="exportShare">Enviar backup</button><button class="btn line" data-act="importFile">Importar arquivo</button><button class="btn ghost" data-act="importPaste">Colar backup</button></div></div>';
