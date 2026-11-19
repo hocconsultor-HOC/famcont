@@ -36,6 +36,16 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebResourceResponse;
+import android.os.Handler;
+import android.os.Looper;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -48,6 +58,50 @@ public class MainActivity extends Activity {
     private WebView web;
     private ValueCallback<Uri[]> fileCb;
     private String insetJs = "";
+    // ===== Atualização automática do app (sem baixar APK): baixa a versão nova da tela e usa na próxima abertura =====
+    private static final String ASSET_URL = "file:///android_asset/index.html";
+    private static final String REMOTE_URL = "https://raw.githubusercontent.com/hocconsultor-HOC/famcont/main/web/index.html";
+    private static final String MARKER = "FAMCONT-APP";
+    private int bundledBuild = -1;
+    private volatile int runningBuild = -1;
+    private volatile boolean servedCached = false;
+    private volatile int okBuild = -1;
+    private long lastCheck = 0;
+    private final Handler ui = new Handler(Looper.getMainLooper());
+    private File webFile() { return new File(getFilesDir(), "www/index.html"); }
+    private static byte[] readAll(InputStream in) throws java.io.IOException {
+        ByteArrayOutputStream o = new ByteArrayOutputStream(); byte[] b = new byte[16384]; int n;
+        while ((n = in.read(b)) > 0) o.write(b, 0, n); return o.toByteArray();
+    }
+    private static int buildOf(String html) { Matcher m = Pattern.compile("version:'([0-9.]+)',build:(\\d+)").matcher(html); return m.find() ? Integer.parseInt(m.group(2)) : -1; }
+    private static String versionOf(String html) { Matcher m = Pattern.compile("version:'([0-9.]+)',build:(\\d+)").matcher(html); return m.find() ? m.group(1) : ""; }
+    private int bundled() {
+        if (bundledBuild < 0) { try (InputStream in = getAssets().open("index.html")) { bundledBuild = buildOf(new String(readAll(in), StandardCharsets.UTF_8)); } catch (Exception e) { bundledBuild = 0; } }
+        return bundledBuild;
+    }
+    private void checkWebUpdate(boolean force) {
+        long t = System.currentTimeMillis();
+        if (!force && t - lastCheck < 30 * 60 * 1000) return;
+        lastCheck = t;
+        new Thread(() -> {
+            try {
+                HttpURLConnection c = (HttpURLConnection) new URL(REMOTE_URL + "?t=" + t).openConnection();
+                c.setConnectTimeout(8000); c.setReadTimeout(20000); c.setUseCaches(false);
+                if (c.getResponseCode() != 200) return;
+                byte[] data; try (InputStream in = c.getInputStream()) { data = readAll(in); }
+                String html = new String(data, StandardCharsets.UTF_8);
+                int b = buildOf(html);
+                if (b > Math.max(runningBuild, bundled()) && html.contains(MARKER) && html.trim().endsWith("</html>")) {
+                    File f = webFile(); File dir = f.getParentFile(); if (dir != null) dir.mkdirs();
+                    File tmp = new File(f.getPath() + ".tmp");
+                    try (FileOutputStream o = new FileOutputStream(tmp)) { o.write(data); }
+                    if (!tmp.renameTo(f)) return;
+                    String v = versionOf(html);
+                    ui.post(() -> web.evaluateJavascript("window.famWebUpdate&&window.famWebUpdate(" + JSONObject.quote(v) + ")", null));
+                }
+            } catch (Exception ignored) { }
+        }).start();
+    }
     private int dp(int x) { return Math.round(x * getResources().getDisplayMetrics().density); }
 
     @Override
@@ -88,7 +142,38 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new Bridge(), "FamBridge");
         web.setWebViewClient(new WebViewClient() {
             @Override
-            public void onPageFinished(WebView view, String url) { view.evaluateJavascript(insetJs, null); }
+            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest req) {
+                if (ASSET_URL.equals(req.getUrl().toString())) {
+                    try {
+                        File f = webFile();
+                        if (f.exists()) {
+                            byte[] data; try (InputStream in = new java.io.FileInputStream(f)) { data = readAll(in); }
+                            String html = new String(data, StandardCharsets.UTF_8);
+                            int b = buildOf(html);
+                            if (b > bundled() && html.contains(MARKER)) {
+                                runningBuild = b; servedCached = true;
+                                return new WebResourceResponse("text/html", "utf-8", new ByteArrayInputStream(data));
+                            }
+                        }
+                    } catch (Exception ignored) { }
+                    runningBuild = bundled(); servedCached = false;
+                }
+                return null;
+            }
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                view.evaluateJavascript(insetJs, null);
+                if (ASSET_URL.equals(url)) {
+                    // rede de segurança: se a versão baixada não abrir direito, volta para a versão instalada
+                    if (servedCached) {
+                        final int expected = runningBuild;
+                        ui.postDelayed(() -> {
+                            if (servedCached && okBuild != expected) { webFile().delete(); servedCached = false; web.loadUrl(ASSET_URL); }
+                        }, 12000);
+                    }
+                    checkWebUpdate(false);
+                }
+            }
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
                 Uri u = req.getUrl();
@@ -120,6 +205,7 @@ public class MainActivity extends Activity {
         super.onResume();
         web.onResume();
         web.evaluateJavascript("window.famResume&&window.famResume()", null);
+        checkWebUpdate(false);
     }
 
     @Override protected void onPause() { web.onPause(); super.onPause(); }
@@ -158,7 +244,7 @@ public class MainActivity extends Activity {
         try (Cursor c = getContentResolver().query(u, new String[]{OpenableColumns.DISPLAY_NAME}, null, null, null)) {
             if (c != null && c.moveToFirst()) return c.getString(0);
         } catch (Exception ignored) { }
-        return "FAMCONT-backup.json";
+        return "CONTAS-backup.json";
     }
 
     private void googleResult(String token, String err) {
@@ -181,14 +267,14 @@ public class MainActivity extends Activity {
                     ContentValues cv = new ContentValues();
                     cv.put(MediaStore.Downloads.DISPLAY_NAME, name);
                     cv.put(MediaStore.Downloads.MIME_TYPE, "application/json");
-                    cv.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/FAMCONT");
+                    cv.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/CONTAS");
                     Uri u = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv);
                     try (OutputStream o = getContentResolver().openOutputStream(u)) { o.write(b); }
                 } else {
                     File d = new File(getExternalFilesDir(null), name);
                     try (FileOutputStream o = new FileOutputStream(d)) { o.write(b); }
                 }
-                return "Backup salvo em Downloads/FAMCONT";
+                return "Backup salvo em Downloads/CONTAS";
             } catch (Exception e) {
                 return "Não foi possível salvar: " + e.getMessage();
             }
@@ -202,6 +288,23 @@ public class MainActivity extends Activity {
             it.putExtra(Intent.EXTRA_TEXT, text);
             runOnUiThread(() -> startActivity(Intent.createChooser(it, title)));
         }
+
+        @JavascriptInterface
+        public int nativeBuild() {
+            try {
+                android.content.pm.PackageInfo pi = getPackageManager().getPackageInfo(getPackageName(), 0);
+                return Build.VERSION.SDK_INT >= 28 ? (int) pi.getLongVersionCode() : pi.versionCode;
+            } catch (Exception e) { return -1; }
+        }
+
+        @JavascriptInterface
+        public void webOk(int build) { okBuild = build; }
+
+        @JavascriptInterface
+        public void reloadApp() { ui.post(() -> web.loadUrl(ASSET_URL)); }
+
+        @JavascriptInterface
+        public void checkUpdate() { checkWebUpdate(true); }
 
         @JavascriptInterface
         public void googleSignIn(String webClientId) {
@@ -238,7 +341,7 @@ public class MainActivity extends Activity {
                 it.addCategory(Intent.CATEGORY_OPENABLE);
                 it.setType("application/json");
                 String model = (Build.MODEL == null ? "Android" : Build.MODEL).replaceAll("[^A-Za-z0-9]+", "-");
-                it.putExtra(Intent.EXTRA_TITLE, "FAMCONT-backup-" + model + ".json");
+                it.putExtra(Intent.EXTRA_TITLE, "CONTAS-backup-" + model + ".json");
                 try { startActivityForResult(it, PICK_DRIVE); } catch (Exception e) { web.evaluateJavascript("window.famDriveLinked&&window.famDriveLinked(null,false)", null); }
             });
         }
@@ -282,7 +385,7 @@ public class MainActivity extends Activity {
         public void copy(String text) {
             runOnUiThread(() -> {
                 ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-                if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("FAMCONT", text));
+                if (cm != null) cm.setPrimaryClip(ClipData.newPlainText("CONTAS", text));
             });
         }
 

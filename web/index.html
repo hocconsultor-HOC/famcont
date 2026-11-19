@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+<!--FAMCONT-APP-->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0B1F3A">
-<title>FAMCONT · Contas da Família</title>
+<title>CONTAS · Contas da Família</title>
 <style>
 :root{--navy:#0B1F3A;--navy2:#16325C;--gold:#C9A54C;--gold2:#E6CB82;--bg:#F3F0E8;--card:#fff;--ink:#14213D;--mut:#667085;--line:#E6E1D6;
 --ok:#1E8E5A;--okb:#E3F3EA;--blue:#2F6FB3;--blueb:#E6EFF9;--warn:#B26B00;--warnb:#FDF1D8;--bad:#C8372D;--badb:#FBE6E3;--fut:#6E56A8;--futb:#EFEAF8;--gray:#5B6474;--grayb:#EEF0F3;
@@ -312,7 +313,7 @@ body.home #fab{display:none!important}
 <div id="app">
   <header class="top">
     <div class="toprow">
-      <div class="brand"><button class="logo" id="hdrLogo" data-act="logoMenu" aria-label="Imagem do app">F</button><div style="min-width:0"><b>FAMCONT</b><small>Contas da Família Martins&amp;Costa</small></div></div>
+      <div class="brand"><button class="logo" id="hdrLogo" data-act="logoMenu" aria-label="Imagem do app"></button><div style="min-width:0"><b>CONTAS</b><small>Contas da Família Martins&amp;Costa</small></div></div>
       <div class="month">
         <button data-act="prev" aria-label="Mês anterior"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
         <div class="ml" id="ml" data-act="goHome" title="Ver todos os meses"></div>
@@ -340,7 +341,7 @@ body.home #fab{display:none!important}
 <script>
 'use strict';
 /* ================= Configuração ================= */
-const APP={name:'FAMCONT',version:'1.4.0',build:7,repo:'hocconsultor-HOC/famcont'};
+const APP={name:'CONTAS',version:'1.5.0',build:8,repo:'hocconsultor-HOC/famcont'};
 APP.apk='https://github.com/'+APP.repo+'/releases/download/app-android/FAMCONT.apk';
 APP.info='https://raw.githubusercontent.com/'+APP.repo+'/main/version.json';
 const FB={apiKey:'AIzaSyDsuh0H-KtQcDOBVQ8WrcGUelo95fImzT8',projectId:'famcont-44007',googleClient:'207577892432-fmd40r5cfriqngh0cipbu3gsr7aumb7o.apps.googleusercontent.com'}; // nuvem (Firebase · projeto FAMCONT, chave pública; a segurança é feita pelas regras do banco)
@@ -402,7 +403,7 @@ let storageOk=true;
 function blankState(){return {v:1,cfg:{renda:null,people:['Família'],weekly:[],u:0},months:{},fam:[]}}
 function normalize(x){
   if(!x||typeof x!=='object')return null;
-  if(x.data&&x.app==='FAMCONT')x=x.data;
+  if(x.data&&(x.app==='FAMCONT'||x.app==='CONTAS'))x=x.data;
   if(!x.months||typeof x.months!=='object')return null;
   const b=blankState(); x.cfg=Object.assign(b.cfg,x.cfg||{});
   for(const k of Object.keys(x.months)){const M=x.months[k]; if(!/^\d{4}-\d{2}$/.test(k)||!M){delete x.months[k];continue}
@@ -629,7 +630,7 @@ function vMeses(){
   h+='<div class="gh st-emdia"><span class="dot"></span>Próximos 6 meses</div><div class="mgrid">'+[1,2,3,4,5,6].map(i=>mCard(shiftKey(ck,i),'fut')).join('')+'</div>';
   const fech=prev.filter(x=>closeState(x).ok);
   if(fech.length)h+='<details class="fin"><summary>▸ Meses fechados ('+fech.length+')</summary><div class="mgrid">'+fech.map(k=>mCard(k,'past')).join('')+'</div></details>';
-  h+='<p class="hint" style="margin-top:14px">💡 Os meses futuros mostram uma <b>previsão</b> feita com as contas fixas, as parcelas familiares e as semanas. Quando um mês termina, o FAMCONT faz o <b>fechamento</b> sozinho: mostra o que foi pago e o que ficou pendente.</p>';
+  h+='<p class="hint" style="margin-top:14px">💡 Os meses futuros mostram uma <b>previsão</b> feita com as contas fixas, as parcelas familiares e as semanas. Quando um mês termina, o CONTAS faz o <b>fechamento</b> sozinho: mostra o que foi pago e o que ficou pendente.</p>';
   return h;
 }
 function mCard(k,kind){
@@ -660,7 +661,7 @@ function openFech(k){
   sheet(h);
 }
 function fechText(k){const n=monthNums(k),past=k<curKey();
-  let t='📊 FAMCONT · '+(past?'Fechamento':'Prévia do fechamento')+' de '+mName(k)+'\n\n✅ Pago: '+brl(n.pago)+' de '+brl(n.total)+' ('+n.itensPagos+' de '+n.itens+' pagamentos)\n📋 Contas fixas: '+n.T.nPago+'/'+n.T.n+'\n👪 Contas familiares: '+n.fPaid+'/'+n.fN+'\n🧒 Semanas: '+n.wd+'/'+n.wn+'\n';
+  let t='📊 CONTAS · '+(past?'Fechamento':'Prévia do fechamento')+' de '+mName(k)+'\n\n✅ Pago: '+brl(n.pago)+' de '+brl(n.total)+' ('+n.itensPagos+' de '+n.itens+' pagamentos)\n📋 Contas fixas: '+n.T.nPago+'/'+n.T.n+'\n👪 Contas familiares: '+n.fPaid+'/'+n.fN+'\n🧒 Semanas: '+n.wd+'/'+n.wn+'\n';
   const pend=[...n.pend.map(b=>'• '+b.name+(b.day?' (dia '+b.day+')':'')),...n.famPend.map(x=>'• '+x.a.pessoa+' – '+x.a.desc),...(n.wn-n.wd?['• Semanas dos filhos: '+(n.wn-n.wd)+' pagamento(s)']:[])];
   if(pend.length)t+='\n⚠️ '+(past?'Ficou pendente':'Falta pagar')+':\n'+pend.join('\n')+'\n';
   return t+'\nConsultor Financeiro Henrique Costa · @hocconsultoria'}
@@ -791,7 +792,7 @@ function vAjustes(){
     '<label class="f">E-mail<input id="a_email" type="email" autocomplete="email" inputmode="email" placeholder="seuemail@gmail.com"></label><label class="f">Senha<input id="a_pw" type="password" autocomplete="current-password" placeholder="mínimo 6 caracteres"></label><p class="err" id="a_err"></p>'+
     '<div class="btns"><button class="btn gold" data-act="login">Entrar</button><button class="btn line" data-act="signup">Criar conta</button></div><div style="text-align:center;margin-top:8px"><button class="lnk" data-act="resetPw">Esqueci a senha</button></div>'}
   h+='</div>';
-  h+='<div class="card set" style="text-align:center"><h4 style="text-align:left">🖼️ Imagem do app</h4><p class="d" style="text-align:left">Aparece no quadrado do topo, no lugar do "F". Pode ser uma foto da família ou um logo.</p><div class="logo lgprev">'+logoInner()+'</div><div class="btns"><button class="btn gold" data-act="logoPick">Escolher imagem</button>'+(S.cfg.logo?'<button class="btn ghost" data-act="logoDel">Voltar ao "F"</button>':'')+'</div></div>';
+  h+='<div class="card set" style="text-align:center"><h4 style="text-align:left">🖼️ Imagem do app</h4><p class="d" style="text-align:left">Aparece no quadrado do topo, no lugar do "F". Pode ser uma foto da família ou um logo.</p><div class="logo lgprev">'+logoInner()+'</div><div class="btns"><button class="btn gold" data-act="logoPick">Escolher imagem</button>'+(S.cfg.logo?'<button class="btn ghost" data-act="logoDel">Voltar ao ícone padrão</button>':'')+'</div></div>';
   h+='<div class="card set"><h4>💰 Renda mensal da família</h4><p class="d">Opcional. Serve para mostrar no Resumo quanto da renda as contas comprometem.</p><label class="f">Valor (R$)<input id="s_renda" inputmode="decimal" placeholder="0,00" value="'+fmtAmt(c.renda)+'"></label><button class="btn navy" style="width:100%" data-act="saveRenda">Salvar renda</button></div>';
   h+='<div class="card set"><h4>👨‍👩‍👧‍👦 Pessoas</h4><p class="d">Nomes usados para filtrar as contas. Separe por vírgula.</p><label class="f"><input id="s_people" value="'+esc(c.people.join(', '))+'"></label><button class="btn navy" style="width:100%" data-act="savePeople">Salvar pessoas</button></div>';
   h+='</div><div>';
@@ -800,14 +801,14 @@ function vAjustes(){
   h+=driveCard();
   h+='<div class="card set"><h4>💾 Cópia de segurança</h4><p class="d">Guarde um arquivo com todas as contas (por exemplo no Google Drive ou WhatsApp). Também serve para passar as contas para outro aparelho.'+(meta.lastBackup?' Último backup: <b>'+new Date(meta.lastBackup).toLocaleDateString('pt-BR')+'</b>.':'')+'</p>'+
     '<div class="btns"><button class="btn navy" data-act="exportFile">Salvar arquivo</button><button class="btn line" data-act="exportShare">Enviar backup</button><button class="btn line" data-act="importFile">Importar arquivo</button><button class="btn ghost" data-act="importPaste">Colar backup</button></div></div>';
-  h+='<div class="card set"><h4>🔄 Atualizações do app</h4><p class="d">Versão instalada: <b>'+APP.version+'</b>. Quando houver versão nova, baixe pelo mesmo link e instale por cima. Suas contas continuam salvas.</p><div class="btns"><button class="btn gold" data-act="checkUpd">Verificar nova versão</button></div><p class="hint" id="updMsg" style="margin:10px 0 0"></p></div>';
+  h+='<div class="card set"><h4>🔄 Atualizações do app</h4><p class="d">Versão em uso: <b>'+APP.version+'</b>. O app <b>se atualiza sozinho</b> pela internet: ao abrir, ele busca melhorias e aplica na hora, sem baixar nada. Só mudanças de ícone ou nome pedem instalar de novo pelo mesmo link (aparece um aviso verde no topo).</p><div class="btns"><button class="btn gold" data-act="checkUpd">Verificar nova versão</button></div><p class="hint" id="updMsg" style="margin:10px 0 0"></p></div>';
   h+='<div class="card set"><h4>⚠️ Zona de cuidado</h4><p class="d">Ações que não dá para desfazer.</p><div class="btns"><button class="btn danger" data-act="delMonth">Excluir '+mName(ui.month)+'</button><button class="btn danger" data-act="resetAll">Apagar tudo deste aparelho</button></div></div>';
-  h+='<div class="about">FAMCONT '+APP.version+' · Controle de contas da família<br>Consultor Financeiro Henrique Costa · @hocconsultoria</div></div></div>';
+  h+='<div class="about">CONTAS '+APP.version+' · Controle de contas da família<br>Consultor Financeiro Henrique Costa · @hocconsultoria</div></div></div>';
   return h;
 }
 function renderWelcome(){
   document.body.classList.add('welcome');paintLogo();
-  $('#view').innerHTML='<div class="card wel"><div class="logo">'+logoInner()+'</div><h2>FAMCONT</h2><p>Controle das contas da família: o que já foi pago, o que vence logo e o que está atrasado, mês a mês.</p>'+
+  $('#view').innerHTML='<div class="card wel"><div class="logo">'+logoInner()+'</div><h2>CONTAS</h2><p>Controle das contas da família: o que já foi pago, o que vence logo e o que está atrasado, mês a mês.</p>'+
    (FB.apiKey?'<button class="gbtn" data-act="gLogin"><svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>Entrar com Google</button><p class="err" id="g_aerr" style="margin-top:8px"></p><button class="btn gold" data-act="welSync">Entrar com e-mail e senha</button>':'')+
    '<button class="btn navy" data-act="importFile">Importar meu arquivo de contas</button><button class="btn line" data-act="importPaste">Colar backup</button>'+
    (window.FAM_SEED?'<button class="btn line" data-act="welSeed">Carregar contas da família</button>':'')+
@@ -833,24 +834,27 @@ window.famDriveLinked=(name,isDrive)=>{
 };
 function driveCard(){
   let h='<div class="card set"><h4>🗂️ Backup automático no Google Drive</h4>';
-  if(!hasBridge())return h+'<p class="d">Disponível no app instalado no Android: você escolhe uma vez uma pasta do seu Google Drive e o FAMCONT salva sozinho uma cópia atualizada a cada mudança.</p></div>';
+  if(!hasBridge())return h+'<p class="d">Disponível no app instalado no Android: você escolhe uma vez uma pasta do seu Google Drive e o CONTAS salva sozinho uma cópia atualizada a cada mudança.</p></div>';
   const di=driveInfo(),on=meta.driveOn&&di.linked;
   if(on){h+='<p class="d"><b style="color:var(--ok)">Ligado ✓</b> · arquivo <b>'+esc(di.name||meta.driveName||'')+'</b>'+(di.drive?' no Google Drive':'')+'.<br>Último backup: <b>'+(meta.driveLast?new Date(meta.driveLast).toLocaleString('pt-BR'):'—')+'</b>. A cópia é atualizada sozinha alguns segundos depois de cada mudança.</p>'+(meta.driveErr?'<p class="err">'+esc(meta.driveErr)+'</p>':'')+
     '<div class="btns"><button class="btn gold" data-act="driveNow">Fazer backup agora</button><button class="btn ghost" data-act="driveOff">Desligar</button></div>'}
-  else h+='<p class="d">Toque em <b>Ligar</b>, escolha <b>Google Drive</b> na lista, a pasta que quiser e toque em <b>Salvar</b>. Pronto: daí em diante o FAMCONT atualiza esse arquivo sozinho, sempre que algo mudar. É feito uma única vez em cada aparelho.</p>'+(meta.driveErr?'<p class="err">'+esc(meta.driveErr)+'</p>':'')+'<div class="btns"><button class="btn gold" data-act="driveOn">Ligar backup no Google Drive</button></div>';
+  else h+='<p class="d">Toque em <b>Ligar</b>, escolha <b>Google Drive</b> na lista, a pasta que quiser e toque em <b>Salvar</b>. Pronto: daí em diante o CONTAS atualiza esse arquivo sozinho, sempre que algo mudar. É feito uma única vez em cada aparelho.</p>'+(meta.driveErr?'<p class="err">'+esc(meta.driveErr)+'</p>':'')+'<div class="btns"><button class="btn gold" data-act="driveOn">Ligar backup no Google Drive</button></div>';
   return h+'</div>';
 }
 
 /* ================= Aviso automático de nova versão ================= */
 function checkUpdateAuto(force){
   if(!force&&meta.updChk&&now()-meta.updChk<12*3600e3)return;
-  fetch(APP.info+'?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return;meta.updChk=now();meta.newVer=(j.build>APP.build)?j:null;store.set(KMETA,meta);if(S&&!sheetOpen())render()}).catch(()=>{});
+  fetch(APP.info+'?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return;meta.updChk=now();meta.newVer=needApk(j)?j:null;store.set(KMETA,meta);if(S&&!sheetOpen())render()}).catch(()=>{});
 }
-function updBanner(){const j=meta.newVer;if(!j||!(j.build>APP.build))return '';
+function nativeB(){try{return (window.FamBridge&&FamBridge.nativeBuild)?Number(FamBridge.nativeBuild()):null}catch(e){return null}}
+function needApk(j){const nb=nativeB();if(nb!=null&&nb>0)return (j.apk||0)>nb;return j.build>APP.build}
+function updBanner(){const j=meta.newVer;if(!j||!needApk(j))return '';
   return '<div class="banner ok" data-act="openApk"><span class="bi">🔄</span><span><b>Nova versão '+esc(j.version)+' disponível.</b> '+(j.notes?esc(j.notes)+'. ':'')+'Toque para baixar e instale por cima: suas contas continuam.</span><span class="go">Baixar</span></div>'}
 
 /* ================= Imagem do app (logo) ================= */
-function logoInner(){return (S&&S.cfg&&S.cfg.logo)?'<img src="'+S.cfg.logo+'" alt="">':'F'}
+const APP_ICON='<svg viewBox="13 12 80 80" width="100%" height="100%" style="display:block;background:#fff"><path fill="#0E3A6E" d="M25 74h7v6h-7zM35 69h7v11h-7zM45 64h7v16h-7zM55 58h7v22h-7zM65 50h7v30h-7zM75 40h7v40h-7z"/><path d="M23 68Q50 61 72 38" fill="none" stroke="#3D74C4" stroke-width="4.5" stroke-linecap="round"/><path fill="#3D74C4" d="M83 25 79.5 42 66.5 32.5z"/></svg>';
+function logoInner(){return (S&&S.cfg&&S.cfg.logo)?'<img src="'+S.cfg.logo+'" alt="">':APP_ICON}
 function paintLogo(){const el=$('#hdrLogo');if(el)el.innerHTML=logoInner()}
 function setLogoFromFile(f){
   if(!f||!/^image\//.test(f.type||'image/'))return toast('Escolha um arquivo de imagem');
@@ -908,20 +912,20 @@ const ACT={
   goHome(){ui.tab='meses';render();scrollTo(0,0)},
   goMonth2(el){const k=el.dataset.k;closeSheet();ui.month=k;if(!getM(k)){ensureMonth(k);toast(mName(k)+' aberto com as contas fixas')}ui.tab='contas';ui.filter='todas';render();scrollTo(0,0)},
   fech(el){openFech(el.dataset.k)},
-  shareFech(el){shareText('Fechamento FAMCONT',fechText(el.dataset.k))},
+  shareFech(el){shareText('Fechamento CONTAS',fechText(el.dataset.k))},
   goSync(){ui.tab='ajustes';render();scrollTo(0,0)},
   filter(el){ui.filter=el.dataset.f;render()},
   pessoa(el){ui.pessoa=el.dataset.p;render()},
   openMonth(){ensureMonth(ui.month);render();toast(mName(ui.month)+' aberto')},
   add(){if(ui.tab==='familia')openFam(null);else openBill(null)},
   famEdit(el){openFam(el.dataset.id)},
-  logoMenu(){if(!S)return;sheet('<h3>Imagem do app</h3><div class="logo lgprev">'+logoInner()+'</div><p class="hint" style="text-align:center">Escolha uma foto ou logo para o quadrado do topo. A imagem é recortada em formato quadrado.</p><div class="actions"><button class="btn gold" data-act="logoPick">Escolher imagem</button>'+(S.cfg.logo?'<button class="btn ghost" data-act="logoDel">Voltar ao "F"</button>':'')+'<button class="btn ghost" data-act="close">Cancelar</button></div>')},
+  logoMenu(){if(!S)return;sheet('<h3>Imagem do app</h3><div class="logo lgprev">'+logoInner()+'</div><p class="hint" style="text-align:center">Escolha uma foto ou logo para o quadrado do topo. A imagem é recortada em formato quadrado.</p><div class="actions"><button class="btn gold" data-act="logoPick">Escolher imagem</button>'+(S.cfg.logo?'<button class="btn ghost" data-act="logoDel">Voltar ao ícone padrão</button>':'')+'<button class="btn ghost" data-act="close">Cancelar</button></div>')},
   ptype(el){const prev=segVal('g_ptipo');el.parentNode.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===el));pixField(el.dataset.v,prev!==el.dataset.v);$('#g_err').textContent='';$('#g_pchave').focus()},
   driveOn(){if(hasBridge())FamBridge.linkDrive()},
   driveNow(){driveWrite(true)},
   driveOff(el){if(!arm(el,'Confirmar: desligar'))return;if(hasBridge())FamBridge.unlinkDrive();meta.driveOn=false;meta.driveErr='';store.set(KMETA,meta);render();toast('Backup automático no Drive desligado')},
   logoPick(){const f=$('#imgIn');f.value='';f.click()},
-  logoDel(){S.cfg.logo=null;S.cfg.u=now();save();closeSheet();render();toast('Voltou ao "F"')},
+  logoDel(){S.cfg.logo=null;S.cfg.u=now();save();closeSheet();render();toast('Voltou ao ícone padrão')},
   copyPix(el){const a=S.fam.find(x=>x.id===el.dataset.id);if(a&&a.pixChave)copyText(pixCopyVal(a),(a.pixTipo||'Chave')+' '+a.pixChave+' copiado')},
   famPay(el){const a=S.fam.find(x=>x.id===el.dataset.id),key=el.dataset.k;if(!a)return;famSnap();
     if(a.pagos[key]){delete a.pagos[key];toast(a.pessoa+' · '+mAb(key)+' voltou para em aberto',true)}
@@ -992,20 +996,21 @@ const ACT={
   tplDel(el){S.cfg.weekly.splice(+el.dataset.i,1);S.cfg.u=now();save();render()},
   rebuildWeeks(el){const M=getM(ui.month);if(!M)return toast('Abra o mês primeiro');if(!arm(el,'Confirmar? Refaz as semanas'))return;snap();const t=now();
     M.weeks.forEach(w=>{if(!w.del){Object.keys(w).forEach(x=>{if(x!=='id')delete w[x]});w.del=true;w.u=t}});M.weeks=M.weeks.concat(genWeeks(ui.month));stampMonth();save();render();toast('Semanas refeitas com a lista padrão',true)},
-  exportFile(){const name='FAMCONT-backup-'+iso(today())+'.json';saveText(name,backupText());meta.lastBackup=now();store.set(KMETA,meta);render()},
-  exportShare(){shareText('Backup FAMCONT',backupText());meta.lastBackup=now();store.set(KMETA,meta);render()},
+  exportFile(){const name='CONTAS-backup-'+iso(today())+'.json';saveText(name,backupText());meta.lastBackup=now();store.set(KMETA,meta);render()},
+  exportShare(){shareText('Backup CONTAS',backupText());meta.lastBackup=now();store.set(KMETA,meta);render()},
   importFile(){const f=$('#fileIn');f.value='';f.click()},
-  importPaste(){sheet('<h3>Colar backup</h3><p class="hint">Cole aqui o texto do arquivo de backup do FAMCONT.</p><label class="f"><textarea id="p_txt" rows="8" placeholder="{ ... }"></textarea></label><p class="err" id="p_err"></p><div class="actions"><button class="btn ghost" data-act="close">Cancelar</button><button class="btn gold" data-act="doPaste">Importar</button></div>')},
-  doPaste(){if(!importText($('#p_txt').value))$('#p_err').textContent='Texto não reconhecido como backup do FAMCONT.';else closeSheet()},
+  importPaste(){sheet('<h3>Colar backup</h3><p class="hint">Cole aqui o texto do arquivo de backup do CONTAS.</p><label class="f"><textarea id="p_txt" rows="8" placeholder="{ ... }"></textarea></label><p class="err" id="p_err"></p><div class="actions"><button class="btn ghost" data-act="close">Cancelar</button><button class="btn gold" data-act="doPaste">Importar</button></div>')},
+  doPaste(){if(!importText($('#p_txt').value))$('#p_err').textContent='Texto não reconhecido como backup do CONTAS.';else closeSheet()},
   delMonth(el){if(!getM(ui.month))return toast('Este mês não está aberto');if(!arm(el,'Toque de novo para excluir'))return;S.months[ui.month]={del:true,u:now()};save();render();toast(mName(ui.month)+' excluído')},
   resetAll(el){if(!arm(el,'Toque de novo: apaga tudo'))return;store.del(KEY);S=null;closeSheet();render()},
   checkUpd(){const m=$('#updMsg');m.textContent='Verificando…';
     fetch(APP.info+'?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{
-      meta.updChk=now();meta.newVer=j.build>APP.build?j:null;store.set(KMETA,meta);
-      if(j.build>APP.build){m.innerHTML='Nova versão <b>'+esc(j.version)+'</b> disponível'+(j.notes?': '+esc(j.notes):'')+'. <button class="lnk" data-act="openApk">Baixar agora</button>'}
+      meta.updChk=now();meta.newVer=needApk(j)?j:null;store.set(KMETA,meta);
+      if(window.FamBridge&&FamBridge.checkUpdate)FamBridge.checkUpdate();
+      if(needApk(j)){m.innerHTML='Nova versão <b>'+esc(j.version)+'</b> disponível'+(j.notes?': '+esc(j.notes):'')+'. <button class="lnk" data-act="openApk">Baixar agora</button>'}
       else m.textContent='Você já está na versão mais recente ✓';}).catch(()=>{m.innerHTML='Não foi possível verificar agora. <button class="lnk" data-act="openApk">Abrir link de download</button>'})},
   openApk(){openUrl(APP.apk)},
-  shareSum(){shareText('Resumo FAMCONT',summaryText())},
+  shareSum(){shareText('Resumo CONTAS',summaryText())},
   welZero(){S=blankState();ensureMonth(curKey());ui.month=curKey();save();render()},
   welSeed(){const x=normalize(JSON.parse(JSON.stringify(window.FAM_SEED)));if(x){S=x;ensureMonth(curKey());save();render()}},
   welSync(){S=blankState();save(true);ui.tab='ajustes';render()},
@@ -1015,10 +1020,10 @@ const ACT={
   syncNow(){syncNow(true)}
 };
 document.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el)return;const f=ACT[el.dataset.act];if(f){e.preventDefault();e.stopPropagation();f(el,e)}});
-$('#fileIn').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{if(!importText(String(r.result)))toast('Arquivo não reconhecido como backup do FAMCONT')};r.readAsText(f)});
+$('#fileIn').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{if(!importText(String(r.result)))toast('Arquivo não reconhecido como backup do CONTAS')};r.readAsText(f)});
 
 /* ================= Backup, compartilhar ================= */
-function backupText(){return JSON.stringify({app:'FAMCONT',v:1,exportedAt:new Date().toISOString(),data:S},null,1)}
+function backupText(){return JSON.stringify({app:'CONTAS',v:1,exportedAt:new Date().toISOString(),data:S},null,1)}
 function importText(t){let x;try{x=normalize(JSON.parse(t))}catch(e){return false}if(!x)return false;
   S=S&&auth?mergeState(x,S):x; if(!getM(curKey())&&Object.keys(S.months).length)ensureMonth(curKey());
   ui.month=curKey();save();render();toast('Contas importadas ✓');return true}
@@ -1033,7 +1038,7 @@ function openUrl(u){if(window.FamBridge&&FamBridge.openUrl)FamBridge.openUrl(u);
 function summaryText(){
   const k=ui.month,M=getM(k),bills=live(M.bills),T=totals(k,bills),sk=b=>status(b,k).k;
   const late=bills.filter(b=>sk(b)==='atrasado'),soon=bills.filter(b=>['logo','emdia'].includes(sk(b))&&b.day).sort((a,b)=>a.day-b.day).slice(0,6);
-  let t='📋 FAMCONT · '+mName(k)+'\n\n✅ Pagas: '+T.nPago+' de '+T.n+' ('+brl(T.pago)+')\n⏳ Falta pagar: '+brl(T.aberto)+'\n';
+  let t='📋 CONTAS · '+mName(k)+'\n\n✅ Pagas: '+T.nPago+' de '+T.n+' ('+brl(T.pago)+')\n⏳ Falta pagar: '+brl(T.aberto)+'\n';
   if(late.length)t+='\n⚠️ Atrasadas:\n'+late.map(b=>'• '+b.name+(b.day?' (dia '+b.day+')':'')+(b.amount!=null?' – '+brl(amtOf(b,k)):'')).join('\n')+'\n';
   if(soon.length)t+='\n📅 Próximos vencimentos:\n'+soon.map(b=>'• Dia '+b.day+' – '+b.name+(b.amount!=null?' – '+brl(b.amount):'')).join('\n')+'\n';
   const FM=famMonth(k).filter(x=>x.st.k!=='pago');
@@ -1103,6 +1108,7 @@ async function syncNow(manual){
     syncSt={st:'ok',at:now()};auth.at=syncSt.at;store.set(KAUTH,auth);if(manual)toast('Sincronizado ✓')}
   catch(e){syncSt.st=(e.message==='Failed to fetch'||!navigator.onLine)?'offline':'err';if(manual)toast(syncSt.st==='offline'?'Sem internet. As mudanças ficam salvas aqui e sobem depois.':'Erro ao sincronizar ('+e.message+')')}
   syncing=false;renderSync();if(ui.tab==='ajustes'&&!sheetOpen()&&manual)render()}
+window.famWebUpdate=v=>{if(performance.now()<20000&&!sheetOpen()){FamBridge.reloadApp()}else{toast('Atualização '+v+' pronta. Será aplicada ao reabrir o app.')}};
 window.famResume=()=>{if(S&&!getM(curKey())&&Object.keys(S.months).length){ensureMonth(curKey())}render();syncNow();checkUpdateAuto(false);if(meta.driveOn&&hasBridge()&&(!meta.driveLast||now()-meta.driveLast>6*3600e3))driveWrite(false)};
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')window.famResume()});
 window.addEventListener('online',()=>syncNow());
@@ -1115,6 +1121,7 @@ window.famBack=()=>{if(sheetOpen()){closeSheet();return true}if(ui.tab!=='meses'
   if(!S&&window.FAM_SEED&&window.FAM_AUTOSEED){S=normalize(JSON.parse(JSON.stringify(window.FAM_SEED)))}
   if(S){if(!getM(curKey())&&Object.keys(S.months).some(k=>getM(k)))ensureMonth(curKey());else save(true)}
   render(); if(auth)syncNow(); checkUpdateAuto(false);
+  try{if(window.FamBridge&&FamBridge.webOk)FamBridge.webOk(APP.build)}catch(e){}
 })();
 </script>
 </body>

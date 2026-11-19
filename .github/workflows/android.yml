@@ -1,4 +1,4 @@
-name: Gerar APK do FAMCONT
+name: Gerar APK do CONTAS (FAMCONT)
 on:
   push:
     branches: [main]
@@ -23,21 +23,24 @@ jobs:
           cp web/index.html android/app/src/main/assets/index.html
           VER=$(python3 -c "import json;print(json.load(open('version.json'))['version'])")
           BUILD=$(python3 -c "import json;print(json.load(open('version.json'))['build'])")
+          APK=$(python3 -c "import json;d=json.load(open('version.json'));print(d.get('apk',d['build']))")
           sed -i "s/const FB={apiKey:'',projectId:''}/const FB={apiKey:'${FB_API_KEY}',projectId:'${FB_PROJECT_ID}'}/" android/app/src/main/assets/index.html
           sed -i "s/version:'[0-9.]*',build:[0-9]*/version:'${VER}',build:${BUILD}/" android/app/src/main/assets/index.html
           echo "APP_VERSION=${VER}" >> $GITHUB_ENV
-          echo "BUILD_NUMBER=${BUILD}" >> $GITHUB_ENV
+          echo "BUILD_NUMBER=${APK}" >> $GITHUB_ENV
       - name: Montar APK
         working-directory: android
         env:
           KS_PASS: ${{ secrets.KS_PASS }}
         run: gradle assembleRelease --no-daemon
-      - run: cp android/app/build/outputs/apk/release/app-release.apk FAMCONT.apk
+      - run: cp android/app/build/outputs/apk/release/app-release.apk FAMCONT.apk && cp FAMCONT.apk CONTAS.apk
       - name: Publicar no link fixo
         uses: softprops/action-gh-release@v2
         with:
           tag_name: app-android
-          name: FAMCONT para Android
-          body: "Baixe FAMCONT.apk no celular ou tablet Android e instale. Para atualizar, baixe de novo pelo mesmo link e instale por cima: as contas continuam."
-          files: FAMCONT.apk
+          name: CONTAS para Android
+          body: "Baixe o APK no celular ou tablet Android e instale. Depois de instalado, o app CONTAS se atualiza sozinho pela internet; só mudanças de ícone ou nome pedem instalar de novo pelo mesmo link."
+          files: |
+            FAMCONT.apk
+            CONTAS.apk
           make_latest: true

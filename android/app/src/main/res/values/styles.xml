@@ -8,4 +8,5 @@
     </style>
     <color name="fundo">#F3F0E8</color>
     <color name="navy">#0B1F3A</color>
+    <color name="icone_fundo">#FFFFFF</color>
 </resources>
