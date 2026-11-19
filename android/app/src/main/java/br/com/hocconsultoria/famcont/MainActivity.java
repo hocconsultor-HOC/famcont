@@ -5,6 +5,10 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.provider.OpenableColumns;
+import org.json.JSONObject;
 import android.graphics.Insets;
 import android.net.Uri;
 import android.os.Build;
@@ -28,6 +32,8 @@ import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
     private static final int PICK_FILE = 41;
+    private static final int PICK_DRIVE = 42;
+    private SharedPreferences prefs;
     private WebView web;
     private ValueCallback<Uri[]> fileCb;
     private String insetJs = "";
@@ -36,6 +42,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
+        prefs = getSharedPreferences("famcont", MODE_PRIVATE);
         web = new WebView(this);
         web.setBackgroundColor(0xFFF3F0E8);
         FrameLayout root = new FrameLayout(this);
@@ -108,6 +115,17 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onActivityResult(int req, int res, Intent data) {
+        if (req == PICK_DRIVE) {
+            Uri u = (res == RESULT_OK && data != null) ? data.getData() : null;
+            String js = "window.famDriveLinked&&window.famDriveLinked(null,false)";
+            if (u != null) {
+                try { getContentResolver().takePersistableUriPermission(u, Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION); } catch (Exception ignored) { }
+                prefs.edit().putString("driveUri", u.toString()).apply();
+                js = "window.famDriveLinked&&window.famDriveLinked(" + JSONObject.quote(nameOf(u)) + "," + isDrive(u) + ")";
+            }
+            web.evaluateJavascript(js, null);
+            return;
+        }
         if (req == PICK_FILE && fileCb != null) {
             Uri u = (res == RESULT_OK && data != null) ? data.getData() : null;
             fileCb.onReceiveValue(u != null ? new Uri[]{u} : null);
@@ -124,6 +142,15 @@ public class MainActivity extends Activity {
             if (!"true".equals(v)) MainActivity.super.onBackPressed();
         });
     }
+
+    private String nameOf(Uri u) {
+        try (Cursor c = getContentResolver().query(u, new String[]{OpenableColumns.DISPLAY_NAME}, null, null, null)) {
+            if (c != null && c.moveToFirst()) return c.getString(0);
+        } catch (Exception ignored) { }
+        return "FAMCONT-backup.json";
+    }
+
+    private boolean isDrive(Uri u) { String a = u.getAuthority(); return a != null && a.contains("com.google.android.apps.docs"); }
 
     private void openExternal(String url) {
         try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception ignored) { }
@@ -158,6 +185,53 @@ public class MainActivity extends Activity {
             it.putExtra(Intent.EXTRA_SUBJECT, title);
             it.putExtra(Intent.EXTRA_TEXT, text);
             runOnUiThread(() -> startActivity(Intent.createChooser(it, title)));
+        }
+
+        @JavascriptInterface
+        public void linkDrive() {
+            runOnUiThread(() -> {
+                Intent it = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                it.addCategory(Intent.CATEGORY_OPENABLE);
+                it.setType("application/json");
+                String model = (Build.MODEL == null ? "Android" : Build.MODEL).replaceAll("[^A-Za-z0-9]+", "-");
+                it.putExtra(Intent.EXTRA_TITLE, "FAMCONT-backup-" + model + ".json");
+                try { startActivityForResult(it, PICK_DRIVE); } catch (Exception e) { web.evaluateJavascript("window.famDriveLinked&&window.famDriveLinked(null,false)", null); }
+            });
+        }
+
+        @JavascriptInterface
+        public String driveInfo() {
+            try {
+                String s = prefs.getString("driveUri", null);
+                JSONObject o = new JSONObject();
+                o.put("linked", s != null);
+                if (s != null) { Uri u = Uri.parse(s); o.put("name", nameOf(u)); o.put("drive", isDrive(u)); }
+                return o.toString();
+            } catch (Exception e) { return "{\"linked\":false}"; }
+        }
+
+        @JavascriptInterface
+        public String writeDrive(String text) {
+            String s = prefs.getString("driveUri", null);
+            if (s == null) return "sem-vinculo";
+            try (OutputStream o = getContentResolver().openOutputStream(Uri.parse(s), "wt")) {
+                if (o == null) return "erro: arquivo indisponível";
+                o.write(text.getBytes(StandardCharsets.UTF_8));
+                return "ok";
+            } catch (SecurityException | java.io.FileNotFoundException e) {
+                return "perdido";
+            } catch (Exception e) {
+                return "erro: " + e.getMessage();
+            }
+        }
+
+        @JavascriptInterface
+        public void unlinkDrive() {
+            String s = prefs.getString("driveUri", null);
+            if (s != null) {
+                try { getContentResolver().releasePersistableUriPermission(Uri.parse(s), Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION); } catch (Exception ignored) { }
+            }
+            prefs.edit().remove("driveUri").apply();
         }
 
         @JavascriptInterface

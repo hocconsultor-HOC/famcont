@@ -300,7 +300,7 @@ details.fin summary::-webkit-details-marker{display:none}
 <script>
 'use strict';
 /* ================= Configuração ================= */
-const APP={name:'FAMCONT',version:'1.1.0',build:2,repo:'hocconsultor-HOC/famcont'};
+const APP={name:'FAMCONT',version:'1.2.0',build:3,repo:'hocconsultor-HOC/famcont'};
 APP.apk='https://github.com/'+APP.repo+'/releases/download/app-android/FAMCONT.apk';
 APP.info='https://raw.githubusercontent.com/'+APP.repo+'/main/version.json';
 const FB={apiKey:'AIzaSyDsuh0H-KtQcDOBVQ8WrcGUelo95fImzT8',projectId:'famcont-44007'}; // nuvem (Firebase · projeto FAMCONT, chave pública; a segurança é feita pelas regras do banco)
@@ -379,6 +379,7 @@ function save(noSync){
   sortMonths(S); storageOk=store.set(KEY,S);
   if(!storageOk)toast('Atenção: não foi possível salvar neste aparelho.');
   if(!noSync)scheduleSync();
+  scheduleDrive();
 }
 
 /* ================= Semanas do mês ================= */
@@ -586,7 +587,7 @@ function vContas(){
   const k=ui.month,M=getM(k); if(!M)return vEmptyMonth(k);
   const all=live(M.bills),mine=all.filter(b=>!ui.pessoa||b.resp===ui.pessoa),T=totals(k,mine);
   const pct=T.n?Math.round(T.nPago/T.n*100):0;
-  let side=famHighlight(k)+'<div class="sum"><div class="k">Pago em '+mName(k)+(ui.pessoa?' · '+esc(ui.pessoa):'')+'</div><div class="big">'+brl(T.pago)+' <small>de '+brl(T.tot)+'</small></div>'+
+  let side=updBanner()+famHighlight(k)+'<div class="sum"><div class="k">Pago em '+mName(k)+(ui.pessoa?' · '+esc(ui.pessoa):'')+'</div><div class="big">'+brl(T.pago)+' <small>de '+brl(T.tot)+'</small></div>'+
    '<div class="prog"><i style="width:'+pct+'%"></i></div><div class="progt">'+T.nPago+' de '+T.n+' contas pagas ('+pct+'%)'+(T.nFut?' · '+T.nFut+' planejada'+(T.nFut>1?'s':''):'')+'</div>'+
    '<div class="stats"><div class="stat ok"><b>'+brl(T.pago)+'</b><span>Pago</span></div><div class="stat"><b>'+brl(T.aberto)+'</b><span>Falta pagar</span></div><div class="stat bad"><b>'+T.nAtras+'</b><span>Atrasada'+(T.nAtras===1?'':'s')+'</span></div></div></div>';
   const pv=shiftKey(k,-1),PM=getM(pv);
@@ -594,7 +595,7 @@ function vContas(){
     if(left.length)side+='<div class="banner bad" data-act="goMonth" data-k="'+pv+'"><span class="bi">⚠️</span><span><b>'+mName(pv)+'</b> ficou com '+left.length+' conta'+(left.length>1?'s':'')+' sem pagar.</span><span class="go">Ver</span></div>';}
   if(T.semValor)side+='<div class="banner info" data-act="filter" data-f="semvalor"><span class="bi">✍️</span><span>'+T.semValor+' conta'+(T.semValor>1?'s estão':' está')+' sem valor. Preencha para o total ficar exato.</span><span class="go">Ver</span></div>';
   const lb=meta.lastBackup,days=lb?Math.floor((now()-lb)/864e5):null;
-  if(!auth&&(days==null||days>=30))side+='<div class="banner info" data-act="tab" data-tab="ajustes"><span class="bi">💾</span><span>'+(days==null?'Ainda não há cópia de segurança.':'Último backup há '+days+' dias.')+' Guarde uma cópia ou ative a nuvem.</span><span class="go">Ajustes</span></div>';
+  if(!auth&&!meta.driveOn&&(days==null||days>=30))side+='<div class="banner info" data-act="tab" data-tab="ajustes"><span class="bi">💾</span><span>'+(days==null?'Ainda não há cópia de segurança.':'Último backup há '+days+' dias.')+' Guarde uma cópia ou ative a nuvem.</span><span class="go">Ajustes</span></div>';
   const cnt=f=>mine.filter(f).length,sk=b=>status(b,k).k;
   const F=[['todas','Todas',mine.length],['apagar','A pagar',cnt(b=>!['pago','futuro'].includes(sk(b)))],['atrasadas','Atrasadas',cnt(b=>sk(b)==='atrasado')],['pagas','Pagas',cnt(b=>sk(b)==='pago')]];
   if(ui.filter==='semvalor')F.push(['semvalor','Sem valor',cnt(b=>b.amount==null&&sk(b)!=='futuro')]);
@@ -684,6 +685,7 @@ function vAjustes(){
   h+='</div><div>';
   h+='<div class="card set" style="margin-top:0"><h4>🗓️ Itens padrão das semanas</h4><p class="d">Esta lista entra automaticamente em cada semana dos meses novos.</p>'+c.weekly.map((t,i)=>'<div class="tpl"><span>'+esc(t.name)+(t.amount!=null?' · <b>'+brl(t.amount)+'</b>':'')+'</span><button class="x lnk" data-act="tplDel" data-i="'+i+'" style="color:var(--bad)">Remover</button></div>').join('')+
     '<div class="row2" style="margin-top:10px"><label class="f">Novo item<input id="t_name" placeholder="Ex.: Natação Manu"></label><label class="f">Valor (opcional)<input id="t_amt" inputmode="decimal" placeholder="0,00"></label></div><div class="btns"><button class="btn line" data-act="tplAdd">Adicionar à lista</button><button class="btn ghost" data-act="rebuildWeeks">Aplicar lista nas semanas deste mês</button></div></div>';
+  h+=driveCard();
   h+='<div class="card set"><h4>💾 Cópia de segurança</h4><p class="d">Guarde um arquivo com todas as contas (por exemplo no Google Drive ou WhatsApp). Também serve para passar as contas para outro aparelho.'+(meta.lastBackup?' Último backup: <b>'+new Date(meta.lastBackup).toLocaleDateString('pt-BR')+'</b>.':'')+'</p>'+
     '<div class="btns"><button class="btn navy" data-act="exportFile">Salvar arquivo</button><button class="btn line" data-act="exportShare">Enviar backup</button><button class="btn line" data-act="importFile">Importar arquivo</button><button class="btn ghost" data-act="importPaste">Colar backup</button></div></div>';
   h+='<div class="card set"><h4>🔄 Atualizações do app</h4><p class="d">Versão instalada: <b>'+APP.version+'</b>. Quando houver versão nova, baixe pelo mesmo link e instale por cima. Suas contas continuam salvas.</p><div class="btns"><button class="btn gold" data-act="checkUpd">Verificar nova versão</button></div><p class="hint" id="updMsg" style="margin:10px 0 0"></p></div>';
@@ -699,6 +701,41 @@ function renderWelcome(){
    (window.FAM_SEED?'<button class="btn line" data-act="welSeed">Carregar contas da família</button>':'')+
    '<button class="btn ghost" data-act="welZero">Começar do zero</button><p class="hint" style="margin-top:14px">Consultor Financeiro Henrique Costa · @hocconsultoria</p></div>';
 }
+
+/* ================= Backup automático no Google Drive ================= */
+const hasBridge=()=>!!(window.FamBridge&&FamBridge.writeDrive);
+function driveInfo(){if(!hasBridge())return {linked:false};try{return JSON.parse(FamBridge.driveInfo())}catch(e){return {linked:false}}}
+let driveT=null;
+function scheduleDrive(){if(!hasBridge()||!meta.driveOn)return;clearTimeout(driveT);driveT=setTimeout(()=>driveWrite(false),8000)}
+function driveWrite(manual){
+  if(!hasBridge()||!S)return;const r=FamBridge.writeDrive(backupText());
+  if(r==='ok'){meta.driveLast=now();meta.lastBackup=now();meta.driveErr='';store.set(KMETA,meta);if(manual)toast('Backup salvo no Google Drive ✓')}
+  else if(r==='perdido'||r==='sem-vinculo'){meta.driveOn=false;meta.driveErr='O vínculo com o arquivo do Drive foi perdido. Ligue de novo.';store.set(KMETA,meta);if(manual)toast(meta.driveErr)}
+  else{meta.driveErr='Última tentativa falhou: '+r.replace(/^erro: /,'');store.set(KMETA,meta);if(manual)toast('Não foi possível salvar no Drive agora')}
+  if(ui.tab==='ajustes'&&!sheetOpen())render();
+}
+window.famDriveLinked=(name,isDrive)=>{
+  if(!name){toast('Backup no Drive não foi ligado.');return}
+  meta.driveOn=true;meta.driveName=name;meta.driveIsDrive=!!isDrive;store.set(KMETA,meta);driveWrite(false);render();
+  toast(isDrive?'Backup automático ligado no Google Drive ✓':'Backup ligado em "'+name+'" (não é o Google Drive)');
+};
+function driveCard(){
+  let h='<div class="card set"><h4>🗂️ Backup automático no Google Drive</h4>';
+  if(!hasBridge())return h+'<p class="d">Disponível no app instalado no Android: você escolhe uma vez uma pasta do seu Google Drive e o FAMCONT salva sozinho uma cópia atualizada a cada mudança.</p></div>';
+  const di=driveInfo(),on=meta.driveOn&&di.linked;
+  if(on){h+='<p class="d"><b style="color:var(--ok)">Ligado ✓</b> · arquivo <b>'+esc(di.name||meta.driveName||'')+'</b>'+(di.drive?' no Google Drive':'')+'.<br>Último backup: <b>'+(meta.driveLast?new Date(meta.driveLast).toLocaleString('pt-BR'):'—')+'</b>. A cópia é atualizada sozinha alguns segundos depois de cada mudança.</p>'+(meta.driveErr?'<p class="err">'+esc(meta.driveErr)+'</p>':'')+
+    '<div class="btns"><button class="btn gold" data-act="driveNow">Fazer backup agora</button><button class="btn ghost" data-act="driveOff">Desligar</button></div>'}
+  else h+='<p class="d">Toque em <b>Ligar</b>, escolha <b>Google Drive</b> na lista, a pasta que quiser e toque em <b>Salvar</b>. Pronto: daí em diante o FAMCONT atualiza esse arquivo sozinho, sempre que algo mudar. É feito uma única vez em cada aparelho.</p>'+(meta.driveErr?'<p class="err">'+esc(meta.driveErr)+'</p>':'')+'<div class="btns"><button class="btn gold" data-act="driveOn">Ligar backup no Google Drive</button></div>';
+  return h+'</div>';
+}
+
+/* ================= Aviso automático de nova versão ================= */
+function checkUpdateAuto(force){
+  if(!force&&meta.updChk&&now()-meta.updChk<12*3600e3)return;
+  fetch(APP.info+'?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return;meta.updChk=now();meta.newVer=(j.build>APP.build)?j:null;store.set(KMETA,meta);if(S&&!sheetOpen())render()}).catch(()=>{});
+}
+function updBanner(){const j=meta.newVer;if(!j||!(j.build>APP.build))return '';
+  return '<div class="banner ok" data-act="openApk"><span class="bi">🔄</span><span><b>Nova versão '+esc(j.version)+' disponível.</b> '+(j.notes?esc(j.notes)+'. ':'')+'Toque para baixar e instale por cima: suas contas continuam.</span><span class="go">Baixar</span></div>'}
 
 /* ================= Imagem do app (logo) ================= */
 function logoInner(){return (S&&S.cfg&&S.cfg.logo)?'<img src="'+S.cfg.logo+'" alt="">':'F'}
@@ -764,6 +801,9 @@ const ACT={
   famEdit(el){openFam(el.dataset.id)},
   logoMenu(){if(!S)return;sheet('<h3>Imagem do app</h3><div class="logo lgprev">'+logoInner()+'</div><p class="hint" style="text-align:center">Escolha uma foto ou logo para o quadrado do topo. A imagem é recortada em formato quadrado.</p><div class="actions"><button class="btn gold" data-act="logoPick">Escolher imagem</button>'+(S.cfg.logo?'<button class="btn ghost" data-act="logoDel">Voltar ao "F"</button>':'')+'<button class="btn ghost" data-act="close">Cancelar</button></div>')},
   ptype(el){const prev=segVal('g_ptipo');el.parentNode.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===el));pixField(el.dataset.v,prev!==el.dataset.v);$('#g_err').textContent='';$('#g_pchave').focus()},
+  driveOn(){if(hasBridge())FamBridge.linkDrive()},
+  driveNow(){driveWrite(true)},
+  driveOff(el){if(!arm(el,'Confirmar: desligar'))return;if(hasBridge())FamBridge.unlinkDrive();meta.driveOn=false;meta.driveErr='';store.set(KMETA,meta);render();toast('Backup automático no Drive desligado')},
   logoPick(){const f=$('#imgIn');f.value='';f.click()},
   logoDel(){S.cfg.logo=null;S.cfg.u=now();save();closeSheet();render();toast('Voltou ao "F"')},
   copyPix(el){const a=S.fam.find(x=>x.id===el.dataset.id);if(a&&a.pixChave)copyText(pixCopyVal(a),(a.pixTipo||'Chave')+' '+a.pixChave+' copiado')},
@@ -845,6 +885,7 @@ const ACT={
   resetAll(el){if(!arm(el,'Toque de novo: apaga tudo'))return;store.del(KEY);S=null;closeSheet();render()},
   checkUpd(){const m=$('#updMsg');m.textContent='Verificando…';
     fetch(APP.info+'?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{
+      meta.updChk=now();meta.newVer=j.build>APP.build?j:null;store.set(KMETA,meta);
       if(j.build>APP.build){m.innerHTML='Nova versão <b>'+esc(j.version)+'</b> disponível'+(j.notes?': '+esc(j.notes):'')+'. <button class="lnk" data-act="openApk">Baixar agora</button>'}
       else m.textContent='Você já está na versão mais recente ✓';}).catch(()=>{m.innerHTML='Não foi possível verificar agora. <button class="lnk" data-act="openApk">Abrir link de download</button>'})},
   openApk(){openUrl(APP.apk)},
@@ -929,7 +970,7 @@ async function syncNow(manual){
     syncSt={st:'ok',at:now()};auth.at=syncSt.at;store.set(KAUTH,auth);if(manual)toast('Sincronizado ✓')}
   catch(e){syncSt.st=(e.message==='Failed to fetch'||!navigator.onLine)?'offline':'err';if(manual)toast(syncSt.st==='offline'?'Sem internet. As mudanças ficam salvas aqui e sobem depois.':'Erro ao sincronizar ('+e.message+')')}
   syncing=false;renderSync();if(ui.tab==='ajustes'&&!sheetOpen()&&manual)render()}
-window.famResume=()=>{if(S&&!getM(curKey())&&Object.keys(S.months).length){ensureMonth(curKey())}render();syncNow()};
+window.famResume=()=>{if(S&&!getM(curKey())&&Object.keys(S.months).length){ensureMonth(curKey())}render();syncNow();checkUpdateAuto(false);if(meta.driveOn&&hasBridge()&&(!meta.driveLast||now()-meta.driveLast>6*3600e3))driveWrite(false)};
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')window.famResume()});
 window.addEventListener('online',()=>syncNow());
 setInterval(()=>{if(document.visibilityState==='visible')syncNow()},30000);
@@ -940,7 +981,7 @@ window.famBack=()=>{if(sheetOpen()){closeSheet();return true}if(ui.tab!=='contas
   const saved=store.get(KEY);S=saved?normalize(saved):null;
   if(!S&&window.FAM_SEED&&window.FAM_AUTOSEED){S=normalize(JSON.parse(JSON.stringify(window.FAM_SEED)))}
   if(S){if(!getM(curKey())&&Object.keys(S.months).some(k=>getM(k)))ensureMonth(curKey());else save(true)}
-  render(); if(auth)syncNow();
+  render(); if(auth)syncNow(); checkUpdateAuto(false);
 })();
 </script>
 </body>
