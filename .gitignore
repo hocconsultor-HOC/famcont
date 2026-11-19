@@ -1,0 +1,7 @@
+build/
+shots/
+*.apk
+android/.gradle/
+android/app/build/
+android/local.properties
+android/app/src/main/assets/index.html

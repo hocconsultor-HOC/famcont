@@ -1,0 +1,22 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'br.com.hocconsultoria.famcont'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'br.com.hocconsultoria.famcont'
+        minSdk 26
+        targetSdk 35
+        versionCode (System.getenv('BUILD_NUMBER') ?: '1').toInteger()
+        versionName System.getenv('APP_VERSION') ?: '1.0.0'
+    }
+    signingConfigs {
+        release {
+            storeFile file('../famcont.jks')
+            storePassword System.getenv('KS_PASS') ?: 'famcont-hoc'
+            keyAlias 'famcont'
+            keyPassword System.getenv('KS_PASS') ?: 'famcont-hoc'
+        }
+    }
+    buildTypes { release { minifyEnabled false; signingConfig signingConfigs.release } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
