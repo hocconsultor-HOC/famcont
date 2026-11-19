@@ -1,4 +1,11 @@
 pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
-dependencyResolutionManagement { repositories { google(); mavenCentral() } }
+dependencyResolutionManagement {
+    repositories {
+        google()
+        mavenCentral()
+        // espelho do Maven Central mantido pelo Google (alternativa se o Central falhar)
+        maven { url 'https://maven-central.storage-download.googleapis.com/maven2/' }
+    }
+}
 rootProject.name = "FAMCONT"
 include ':app'
