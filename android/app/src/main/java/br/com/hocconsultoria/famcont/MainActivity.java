@@ -285,6 +285,39 @@ public class MainActivity extends Activity {
             }
         }
 
+        // Salva qualquer arquivo (ex.: PDF do resumo) em Downloads/CONTAS e já abre para ver ou compartilhar
+        @JavascriptInterface
+        public String saveBytes(String name, String mime, String b64) {
+            try {
+                byte[] b = android.util.Base64.decode(b64, android.util.Base64.DEFAULT);
+                if (Build.VERSION.SDK_INT >= 29) {
+                    ContentValues cv = new ContentValues();
+                    cv.put(MediaStore.Downloads.DISPLAY_NAME, name);
+                    cv.put(MediaStore.Downloads.MIME_TYPE, mime);
+                    cv.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/CONTAS");
+                    Uri u = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv);
+                    if (u == null) return "Não foi possível salvar o arquivo";
+                    try (OutputStream o = getContentResolver().openOutputStream(u)) { o.write(b); }
+                    final Uri fu = u;
+                    runOnUiThread(() -> {
+                        try {
+                            Intent it = new Intent(Intent.ACTION_VIEW);
+                            it.setDataAndType(fu, mime);
+                            it.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(Intent.createChooser(it, "Abrir " + name));
+                        } catch (Exception ignored) { }
+                    });
+                    return "PDF salvo em Downloads/CONTAS";
+                } else {
+                    File d = new File(getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), name);
+                    try (FileOutputStream o = new FileOutputStream(d)) { o.write(b); }
+                    return "PDF salvo em Android/data/br.com.hocconsultoria.famcont/files/Download";
+                }
+            } catch (Exception e) {
+                return "Não foi possível salvar: " + e.getMessage();
+            }
+        }
+
         @JavascriptInterface
         public void share(String title, String text) {
             Intent it = new Intent(Intent.ACTION_SEND);
