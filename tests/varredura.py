@@ -126,6 +126,39 @@ async def main():
           const M1=mergeState(A,B),M2=mergeState(M1,A);const m=M2.months['2026-11'];
           return JSON.stringify(M1)===JSON.stringify(M2)&&m.bills.find(b=>b.id==='b2').status==='pago'&&m.bills.find(b=>b.id==='b6').amount===95&&M2.fam[0].pagos['2026-12']===true})()''')
         ok('Celular + tablet alterando ao mesmo tempo: nada se perde',conv)
+        # sincronismo entre meses: incluir, alterar e excluir valem para o mês e os seguintes
+        await ev("ensureMonth('2026-12');ensureMonth('2027-01');ui.month='2026-11';ui.tab='contas';ui.filter='todas';render()"); await pg.wait_for_timeout(150)
+        await pg.click('.bill >> text=Seguro'); await pg.fill('#f_name','Seguro carro'); await pg.fill('#f_amt','95,00'); await pg.click('[data-act=saveBill]'); tm=await pg.inner_text('#toastMsg')
+        g=await ev("['2026-12','2027-01'].map(m=>live(getM(m).bills).filter(b=>b.name==='Seguro carro').map(b=>[b.amount,b.status]))")
+        ok('Alterar conta em novembro altera dezembro e janeiro',g==[[[95,'aberto']],[[95,'aberto']]] and 'seguintes' in tm,(g,tm))
+        await pg.click('#fab'); await pg.fill('#f_name','Celular Vivo Mãe'); await pg.fill('#f_amt','60,00'); await pg.click('[data-act=saveBill]')
+        g=await ev("['2026-11','2026-12','2027-01'].map(m=>live(getM(m).bills).filter(b=>b.name==='Celular Vivo Mãe').length)")
+        ok('Incluir conta em novembro inclui também nos meses seguintes',g==[1,1,1],g)
+        await pg.click('.bill >> text=Seguro carro'); await pg.click('[data-act=del]'); await pg.click('[data-act=del]')
+        g=await ev("['2026-11','2026-12','2027-01'].map(m=>live(getM(m).bills).some(b=>b.name==='Seguro carro'))")
+        ok('Excluir conta em novembro exclui também dos meses seguintes',g==[False,False,False],g)
+        await pg.click('#toastBtn'); g=await ev("['2026-11','2026-12','2027-01'].map(m=>live(getM(m).bills).some(b=>b.name==='Seguro carro'))")
+        ok('Desfazer a exclusão volta em todos os meses',g==[True,True,True],g)
+        await ev("ui.month='2026-12';render()"); await pg.click('.bill >> text=Seguro carro'); await pg.fill('#f_amt','99,00'); await pg.click('[data-act=saveBill]')
+        g=await ev("['2026-11','2026-12','2027-01'].map(m=>live(getM(m).bills).find(b=>b.name==='Seguro carro').amount)")
+        ok('Alterar em dezembro não mexe em novembro (só daí para frente)',g==[95,99,99],g)
+        # correção dos meses que já existiam (o caso do Celular Vivo)
+        mg=await ev("""(()=>{const bak=S;const L=(id,name,amount,st,u)=>({id,u,name,cat:'telecom',resp:'Família',day:10,amount,freq:'mensal',status:st,paidAt:st==='pago'?'2026-11-05':null,note:'',wk:[]});
+          S={v:1,cfg:bak.cfg,fam:[],months:{
+            '2026-11':{u:9,weeks:[],bills:[L('n1','Celular Vivo Comercial',90,'aberto',5000),L('n2','Celular Vivo Mãe',60,'pago',5001),L('n3','Internet',120,'aberto',100)]},
+            '2026-12':{u:2000,weeks:[{id:'w',u:2000,start:'2026-12-01',end:'2026-12-04',items:[]}],bills:[L('d1','Celular Vivo Comercial e Mãe',150,'aberto',2000),L('d3','Internet',130,'aberto',3000)]},
+            '2027-01':{u:2100,weeks:[],bills:[L('j1','Celular Vivo Comercial e Mãe',150,'aberto',2100),L('j3','Internet',130,'aberto',2100)]}}};
+          migrateSeries();const r=['2026-12','2027-01'].map(m=>live(S.months[m].bills).map(b=>b.name+'|'+b.amount+'|'+b.status).sort());
+          const again=migrateSeries();S=bak;return [r,again]})()""")
+        exp=[['Celular Vivo Comercial|90|aberto','Celular Vivo Mãe|60|aberto','Internet|130|aberto']]*2
+        ok('Correção automática: meses seguintes recebem a separação do Celular Vivo',mg[0]==exp,mg[0])
+        ok('Correção automática não repete nem duplica',mg[1]==0,mg[1])
+        # Ajustes compacto
+        await ev("ui.tab='ajustes';render()"); await pg.wait_for_timeout(100)
+        sm=await ev("[...document.querySelectorAll('details.acc')].map(d=>[d.dataset.k,d.open])")
+        ok('Ajustes: Renda, Pessoas e Semanas recolhidos',sm==[['renda',False],['pessoas',False],['semanas',False]],sm)
+        await pg.click('details.acc[data-k=renda] summary'); vis=await pg.is_visible('#s_renda'); ok('Ajustes: tocar em Renda abre o campo',vis)
+        aj=await pg.inner_text('#view'); ok('Ajustes: backup, cópia de segurança e atualizações continuam',all(x in aj for x in ('Cópia de segurança','Atualizações do app','Verificar nova versão')))
         ok('Nenhum erro de JavaScript nos fluxos',not errs,errs[:3])
         await br.close()
     os.unlink(tmp.name)

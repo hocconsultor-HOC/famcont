@@ -295,6 +295,15 @@ body.home #fab{display:none!important}
 .grow .gt{flex:1;min-width:0}
 .grow .gt small{display:block;color:var(--mut);font-size:12.5px}
 .grow .gv{font-weight:800;white-space:nowrap}
+details.acc{padding:0}
+details.acc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:16px 18px;min-height:56px}
+details.acc>summary::-webkit-details-marker{display:none}
+details.acc>summary b{font-size:16px;color:var(--navy)}
+details.acc>summary small{flex:1;text-align:right;color:var(--mut);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+details.acc>summary .ai{font-size:20px}
+details.acc>summary .chev{font-size:22px;color:var(--mut);transition:transform .2s;line-height:1}
+details.acc[open]>summary .chev{transform:rotate(90deg)}
+details.acc>.ab{padding:0 18px 18px}
 /* Telas largas: tablet e celular deitado */
 @media (min-width:700px){
   .month{order:0;flex-basis:380px;flex-grow:0}
@@ -364,9 +373,11 @@ body.home #fab{display:none!important}
 <script>
 'use strict';
 /* ================= Configuração ================= */
-const APP={name:'CONTAS',version:'1.6.1',build:10,repo:'hocconsultor-HOC/famcont'};
+const APP={name:'CONTAS',version:'1.6.2',build:11,repo:'hocconsultor-HOC/famcont'};
 APP.apk='https://github.com/'+APP.repo+'/releases/download/app-android/FAMCONT.apk';
 APP.info='https://raw.githubusercontent.com/'+APP.repo+'/main/version.json';
+APP.infoApi='https://api.github.com/repos/'+APP.repo+'/contents/version.json?ref=main';
+function getInfo(){const raw=()=>fetch(APP.info+'?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject());return fetch(APP.infoApi,{cache:'no-store',headers:{Accept:'application/vnd.github.raw'}}).then(r=>r.ok?r.json():Promise.reject()).catch(raw)}
 const FB={apiKey:'AIzaSyDsuh0H-KtQcDOBVQ8WrcGUelo95fImzT8',projectId:'famcont-44007',googleClient:'207577892432-fmd40r5cfriqngh0cipbu3gsr7aumb7o.apps.googleusercontent.com'}; // nuvem (Firebase · projeto FAMCONT, chave pública; a segurança é feita pelas regras do banco)
 const KEY='famcont.v1',KAUTH='famcont.auth',KMETA='famcont.meta';
 const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -457,10 +468,51 @@ function genWeeks(k){
     items:S.cfg.weekly.map(t=>({id:uid(),u:now(),name:t.name,amount:t.amount==null?null:t.amount,done:false}))}));
 }
 const weeksOf=k=>{const M=getM(k);return M?live(M.weeks):[]};
+/* ===== Série: a mesma conta em todos os meses (sincronismo entre meses) ===== */
+const sidOf=b=>b.sid||b.id;
+const carries=b=>b.freq!=='unica'||b.status==='futuro';   // passa para o mês seguinte
+const PROP=['name','cat','resp','day','amount','freq','note'];
+const laterMonths=k=>Object.keys(S.months).filter(x=>x>k&&getM(x)).sort();
+function copyFor(src,id,t){const c={id,sid:sidOf(src),u:t,eu:t,status:src.status==='futuro'?'futuro':'aberto',paidAt:null,wk:[]};PROP.forEach(f=>c[f]=src[f]);return c}
+// Leva uma inclusão, alteração ou exclusão do mês k para todos os meses seguintes que já existem
+function propagate(k,src,kind){
+  const sid=sidOf(src),t=now();let n=0;
+  laterMonths(k).forEach(m=>{const M=S.months[m],tg=M.bills.find(b=>!b.del&&sidOf(b)===sid);
+    if(kind==='del'||!carries(src)){if(tg){Object.keys(tg).forEach(x=>{if(x!=='id')delete tg[x]});tg.del=true;tg.u=t;M.u=t;n++}return}
+    if(tg){let ch=false;PROP.forEach(f=>{if(tg[f]!==src[f]){if(f==='freq')tg.wk=[];tg[f]=src[f];ch=true}});
+      if(ch){tg.sid=sid;tg.eu=t;tg.u=t;M.u=t;n++}return}
+    if(kind==='new'){const id=sid+'@'+m,i=M.bills.findIndex(b=>b.id===id),c=copyFor(src,id,t);if(i>=0)M.bills[i]=c;else M.bills.push(c);M.u=t;n++}
+  });
+  return n;
+}
+// Uma vez por aparelho: liga as contas iguais entre os meses e leva para os meses seguintes
+// o que foi alterado ou incluído depois que eles foram criados (corrige meses antigos).
+const normName=x=>String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').split(' ').filter(w=>w&&!['e','de','da','do','das','dos','a','o'].includes(w));
+function simil(a,b){const A=new Set(normName(a)),B=new Set(normName(b));if(!A.size||!B.size)return 0;let i=0;A.forEach(x=>{if(B.has(x))i++});return i/(A.size+B.size-i)+((i===A.size||i===B.size)&&i>0?.15:0)}
+function migrateSeries(){
+  const ks=Object.keys(S.months).filter(k=>getM(k)).sort();let n=0;const t=now(),ck=curKey(),U0=new Map(),uo=b=>U0.has(b.id)?U0.get(b.id):(b.u||0),setSid=(b,v)=>{if(b.sid!==v){b.sid=v;b.u=t;n++}};
+  ks.forEach(k=>{const M=S.months[k];M.bills.forEach(b=>U0.set(b.id,b.u||0))});
+  for(let i=1;i<ks.length;i++){const P=live(S.months[ks[i-1]].bills),C=live(S.months[ks[i]].bills),used=new Set();
+    P.forEach(x=>{if(!x.sid)setSid(x,x.id)});
+    C.filter(b=>b.sid).forEach(b=>{const q=P.find(x=>x.sid===b.sid);if(q)used.add(q.id)});
+    const key=b=>normName(b.name).join(' ');
+    C.filter(b=>!b.sid).forEach(b=>{const q=P.find(x=>!used.has(x.id)&&key(x)===key(b));if(q){used.add(q.id);setSid(b,q.sid)}});
+    C.filter(b=>!b.sid).forEach(b=>{let best=null,bs=.5;P.forEach(x=>{if(used.has(x.id))return;let v=simil(x.name,b.name);if(x.cat!==b.cat)v-=.2;if(x.day===b.day)v+=.05;if(x.amount===b.amount)v+=.05;if(v>bs){bs=v;best=x}});if(best){used.add(best.id);setSid(b,best.sid)}});
+    C.forEach(b=>{if(!b.sid)setSid(b,b.id)})}
+  if(ks.length)live(S.months[ks[0]].bills).forEach(b=>{if(!b.sid)setSid(b,b.id)});
+  for(let i=1;i<ks.length;i++){if(ks[i-1]<ck)continue;const PM=S.months[ks[i-1]],CM=S.months[ks[i]];
+    const born=Math.min(Infinity,...CM.bills.map(b=>uo(b)||Infinity),...CM.weeks.map(w=>w.u||Infinity));
+    live(PM.bills).forEach(src=>{if(!carries(src))return;const tg=live(CM.bills).find(b=>b.sid===src.sid);
+      if(tg){if(uo(src)>uo(tg)&&PROP.some(f=>tg[f]!==src[f])){PROP.forEach(f=>tg[f]=src[f]);tg.u=t;U0.set(tg.id,t);CM.u=t;n++}}
+      else if(born<Infinity&&uo(src)>born){const id=src.sid+'@'+ks[i];if(CM.bills.some(b=>b.id===id))return;CM.bills.push(copyFor(src,id,t));U0.set(id,t);CM.u=t;n++}})}
+  return n;
+}
+// roda uma vez: sem nuvem, ao abrir; com nuvem, logo depois de receber os dados mais novos
+function runMigration(){if(meta.mig1||!S)return 0;let n=0;try{n=migrateSeries()}catch(e){return 0}meta.mig1=now();store.set(KMETA,meta);if(n)save(true);return n}
 function ensureMonth(k){
   if(getM(k))return getM(k);
   const prevs=Object.keys(S.months).filter(x=>x<k&&getM(x)).sort(); const src=prevs.length?getM(prevs[prevs.length-1]):null;
-  const bills=src?live(src.bills).filter(b=>b.freq!=='unica'||b.status==='futuro').map(b=>Object.assign({},b,{id:uid(),u:now(),
+  const bills=src?live(src.bills).filter(carries).map(b=>Object.assign({},b,{id:uid(),sid:sidOf(b),u:now(),
     status:b.status==='futuro'?'futuro':'aberto',paidAt:null,wk:[]})):[];
   S.months[k]={bills:[],weeks:[],u:now()}; S.months[k].weeks=genWeeks(k); S.months[k].bills=bills;
   save(); return S.months[k];
@@ -812,12 +864,13 @@ function vAjustes(){
     '<label class="f">E-mail<input id="a_email" type="email" autocomplete="email" inputmode="email" placeholder="seuemail@gmail.com"></label><label class="f">Senha<input id="a_pw" type="password" autocomplete="current-password" placeholder="mínimo 6 caracteres"></label><p class="err" id="a_err"></p>'+
     '<div class="btns"><button class="btn gold" data-act="login">Entrar</button><button class="btn line" data-act="signup">Criar conta</button></div><div style="text-align:center;margin-top:8px"><button class="lnk" data-act="resetPw">Esqueci a senha</button></div>'}
   h+='</div>';
-  h+='<div class="card set" style="text-align:center"><h4 style="text-align:left">🖼️ Imagem do app</h4><p class="d" style="text-align:left">Aparece no quadrado do topo, no lugar do "F". Pode ser uma foto da família ou um logo.</p><div class="logo lgprev">'+logoInner()+'</div><div class="btns"><button class="btn gold" data-act="logoPick">Escolher imagem</button>'+(S.cfg.logo?'<button class="btn ghost" data-act="logoDel">Voltar ao ícone padrão</button>':'')+'</div></div>';
-  h+='<div class="card set"><h4>💰 Renda mensal da família</h4><p class="d">Opcional. Serve para mostrar no Resumo quanto da renda as contas comprometem.</p><label class="f">Valor (R$)<input id="s_renda" inputmode="decimal" placeholder="0,00" value="'+fmtAmt(c.renda)+'"></label><button class="btn navy" style="width:100%" data-act="saveRenda">Salvar renda</button></div>';
-  h+='<div class="card set"><h4>👨‍👩‍👧‍👦 Pessoas</h4><p class="d">Nomes usados para filtrar as contas. Separe por vírgula.</p><label class="f"><input id="s_people" value="'+esc(c.people.join(', '))+'"></label><button class="btn navy" style="width:100%" data-act="savePeople">Salvar pessoas</button></div>';
+  h+='<div class="card set" style="text-align:center"><h4 style="text-align:left">🖼️ Imagem do app</h4><p class="d" style="text-align:left">Aparece no quadrado do topo. Pode ser uma foto da família ou um logo.</p><div class="logo lgprev">'+logoInner()+'</div><div class="btns"><button class="btn gold" data-act="logoPick">Escolher imagem</button>'+(S.cfg.logo?'<button class="btn ghost" data-act="logoDel">Voltar ao ícone padrão</button>':'')+'</div></div>';
+  const acc=(k,ic,t,info,inner)=>'<details class="card set acc" data-k="'+k+'"'+(ui.acc&&ui.acc[k]?' open':'')+'><summary><span class="ai">'+ic+'</span><b>'+t+'</b><small>'+info+'</small><span class="chev">›</span></summary><div class="ab">'+inner+'</div></details>';
+  h+=acc('renda','💰','Renda',c.renda?brl(c.renda):'não informada','<p class="d">Opcional. Serve para mostrar no Resumo quanto da renda as contas comprometem.</p><label class="f">Valor (R$)<input id="s_renda" inputmode="decimal" placeholder="0,00" value="'+fmtAmt(c.renda)+'"></label><button class="btn navy" style="width:100%" data-act="saveRenda">Salvar renda</button>');
+  h+=acc('pessoas','👨‍👩‍👧‍👦','Pessoas',c.people.length+' nome'+(c.people.length!==1?'s':''),'<p class="d">Nomes que aparecem como responsável em cada conta. Separe por vírgula.</p><label class="f"><input id="s_people" value="'+esc(c.people.join(', '))+'"></label><button class="btn navy" style="width:100%" data-act="savePeople">Salvar pessoas</button>');
+  h+=acc('semanas','🗓️','Semanas',c.weekly.length+' ite'+(c.weekly.length!==1?'ns':'m')+' padrão','<p class="d">Esta lista entra automaticamente em cada semana dos meses novos.</p>'+c.weekly.map((t,i)=>'<div class="tpl"><span>'+esc(t.name)+(t.amount!=null?' · <b>'+brl(t.amount)+'</b>':'')+'</span><button class="x lnk" data-act="tplDel" data-i="'+i+'" style="color:var(--bad)">Remover</button></div>').join('')+
+    '<div class="row2" style="margin-top:10px"><label class="f">Novo item<input id="t_name" placeholder="Ex.: Natação"></label><label class="f">Valor (opcional)<input id="t_amt" inputmode="decimal" placeholder="0,00"></label></div><div class="btns"><button class="btn line" data-act="tplAdd">Adicionar à lista</button><button class="btn ghost" data-act="rebuildWeeks">Aplicar lista nas semanas deste mês</button></div>');
   h+='</div><div>';
-  h+='<div class="card set" style="margin-top:0"><h4>🗓️ Itens padrão das semanas</h4><p class="d">Esta lista entra automaticamente em cada semana dos meses novos.</p>'+c.weekly.map((t,i)=>'<div class="tpl"><span>'+esc(t.name)+(t.amount!=null?' · <b>'+brl(t.amount)+'</b>':'')+'</span><button class="x lnk" data-act="tplDel" data-i="'+i+'" style="color:var(--bad)">Remover</button></div>').join('')+
-    '<div class="row2" style="margin-top:10px"><label class="f">Novo item<input id="t_name" placeholder="Ex.: Natação"></label><label class="f">Valor (opcional)<input id="t_amt" inputmode="decimal" placeholder="0,00"></label></div><div class="btns"><button class="btn line" data-act="tplAdd">Adicionar à lista</button><button class="btn ghost" data-act="rebuildWeeks">Aplicar lista nas semanas deste mês</button></div></div>';
   h+=driveCard();
   h+='<div class="card set"><h4>💾 Cópia de segurança</h4><p class="d">Guarde um arquivo com todas as contas (por exemplo no Google Drive ou WhatsApp). Também serve para passar as contas para outro aparelho.'+(meta.lastBackup?' Último backup: <b>'+new Date(meta.lastBackup).toLocaleDateString('pt-BR')+'</b>.':'')+'</p>'+
     '<div class="btns"><button class="btn navy" data-act="exportFile">Salvar arquivo</button><button class="btn line" data-act="exportShare">Enviar backup</button><button class="btn line" data-act="importFile">Importar arquivo</button><button class="btn ghost" data-act="importPaste">Colar backup</button></div></div>';
@@ -865,7 +918,7 @@ function driveCard(){
 /* ================= Aviso automático de nova versão ================= */
 function checkUpdateAuto(force){
   if(!force&&meta.updChk&&now()-meta.updChk<12*3600e3)return;
-  fetch(APP.info+'?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(!j)return;meta.updChk=now();meta.newVer=needApk(j)?j:null;store.set(KMETA,meta);if(S&&!sheetOpen())render()}).catch(()=>{});
+  getInfo().then(j=>{if(!j)return;meta.updChk=now();meta.newVer=needApk(j)?j:null;store.set(KMETA,meta);if(S&&!sheetOpen())render()}).catch(()=>{});
 }
 const EYE_ON='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',EYE_OFF='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.6C3.8 8.4 2 12 2 12s3.6 7 10 7c1.7 0 3.2-.5 4.5-1.2M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
 function eyeBtn(){return '<button class="eye" data-act="eye" aria-label="'+(meta.hide?'Mostrar valores':'Esconder valores')+'">'+(meta.hide?EYE_OFF:EYE_ON)+'</button>'}
@@ -920,7 +973,17 @@ function openItem(wid,iid){
 /* ================= Desfazer e avisos ================= */
 let toastT=null;
 function toast(msg,canUndo){$('#toastMsg').textContent=msg;$('#toastBtn').hidden=!canUndo;$('#toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>{$('#toast').classList.remove('show');if(canUndo)ui.undo=null},canUndo?6000:3200)}
-function snap(){ui.undo={k:ui.month,data:JSON.stringify(S.months[ui.month])}}
+function restoreMonth(mk,js){
+    const d=JSON.parse(js),cur=S.months[mk],t=now();
+    // reaplica o estado anterior marcando tudo como alterado agora (para a nuvem aceitar)
+    const touch=a=>(a||[]).forEach(x=>{x.u=t;(x.items||[]).forEach(i=>i.u=t)});
+    touch(d.bills);touch(d.weeks);d.u=t;
+    if(cur){const ids=new Set(d.bills.map(b=>b.id));cur.bills.forEach(b=>{if(!ids.has(b.id))d.bills.push({id:b.id,del:true,u:t})});
+      const wids=new Set(d.weeks.map(w=>w.id));cur.weeks.forEach(w=>{if(!wids.has(w.id))d.weeks.push({id:w.id,del:true,u:t})});
+      d.weeks.forEach(w=>{const cw=cur.weeks.find(x=>x.id===w.id);if(cw&&w.items){const iids=new Set(w.items.map(i=>i.id));cw.items.forEach(i=>{if(!iids.has(i.id))w.items.push({id:i.id,del:true,u:t})})}})}
+    S.months[mk]=d}
+
+function snap(all){const more={};if(all)laterMonths(ui.month).forEach(m=>more[m]=JSON.stringify(S.months[m]));ui.undo={k:ui.month,data:JSON.stringify(S.months[ui.month]),more}}
 function stampMonth(){const M=getM(ui.month);if(M)M.u=now()}
 
 /* ================= Ações ================= */
@@ -985,23 +1048,18 @@ const ACT={
     const amount=parseBRL($('#f_amt').value); if(Number.isNaN(amount))return err('Valor inválido. Use, por exemplo, 150,00.');
     const st=segVal('f_status'),freq=segVal('f_freq'),paid=$('#f_paid').value;
     if(st==='pago'&&!paid)return err('Informe a data do pagamento.');
-    const M=getM(ui.month);snap();
+    const M=getM(ui.month);snap(true);let n=0;
     const data={name,cat:$('#f_cat').value,resp:$('#f_resp').value,day,amount,freq,status:st,paidAt:st==='pago'?paid:null,note:$('#f_note').value.trim(),u:now()};
-    if(el.dataset.id){const b=findBill(el.dataset.id);const wasWk=b.freq==='semanal';Object.assign(b,data);
-      if(freq==='semanal'){if(st==='pago')b.wk=weeksOf(ui.month).map(()=>true);else if(!wasWk)b.wk=[]}}
-    else M.bills.push(Object.assign({id:uid(),wk:freq==='semanal'&&st==='pago'?weeksOf(ui.month).map(()=>true):[]},data));
-    stampMonth();save();closeSheet();render();toast(el.dataset.id?'Conta atualizada':'Conta incluída',true)},
-  del(el){if(!arm(el,'Toque para confirmar'))return;const b=findBill(el.dataset.id);snap();
-    Object.keys(b).forEach(x=>{if(!['id'].includes(x))delete b[x]});b.del=true;b.u=now();stampMonth();save();closeSheet();render();toast('Conta excluída',true)},
+    if(el.dataset.id){const b=findBill(el.dataset.id);const wasWk=b.freq==='semanal',wasCarry=carries(b);Object.assign(b,data);if(!b.sid)b.sid=b.id;b.eu=data.u;
+      if(freq==='semanal'){if(st==='pago')b.wk=weeksOf(ui.month).map(()=>true);else if(!wasWk)b.wk=[]}
+      n=propagate(ui.month,b,!wasCarry&&carries(b)?'new':'edit')}
+    else{const id=uid(),b=Object.assign({id,sid:id,eu:data.u,wk:freq==='semanal'&&st==='pago'?weeksOf(ui.month).map(()=>true):[]},data);M.bills.push(b);if(carries(b))n=propagate(ui.month,b,'new')}
+    stampMonth();save();closeSheet();render();toast((el.dataset.id?'Conta atualizada':'Conta incluída')+(n?' · também em '+n+' mês'+(n>1?'es':'')+' seguinte'+(n>1?'s':''):''),true)},
+  del(el){if(!arm(el,'Toque para confirmar'))return;const b=findBill(el.dataset.id);snap(true);const n=propagate(ui.month,{id:b.id,sid:sidOf(b)},'del');
+    Object.keys(b).forEach(x=>{if(!['id'].includes(x))delete b[x]});b.del=true;b.u=now();stampMonth();save();closeSheet();render();toast('Conta excluída'+(n?' · também de '+n+' mês'+(n>1?'es':'')+' seguinte'+(n>1?'s':''):''),true)},
   undo(){if(!ui.undo)return;if(ui.undo.type==='fam'){const d=JSON.parse(ui.undo.data),t=now(),ids=new Set(d.map(a=>a.id));d.forEach(a=>a.u=t);S.fam.forEach(a=>{if(!ids.has(a.id))d.push({id:a.id,del:true,u:t})});S.fam=d;ui.undo=null;save();render();$('#toast').classList.remove('show');toast('Desfeito');return}
-    const d=JSON.parse(ui.undo.data),cur=S.months[ui.undo.k],t=now();
-    // reaplica o estado anterior marcando tudo como alterado agora (para a nuvem aceitar)
-    const touch=a=>(a||[]).forEach(x=>{x.u=t;(x.items||[]).forEach(i=>i.u=t)});
-    touch(d.bills);touch(d.weeks);d.u=t;
-    if(cur){const ids=new Set(d.bills.map(b=>b.id));cur.bills.forEach(b=>{if(!ids.has(b.id))d.bills.push({id:b.id,del:true,u:t})});
-      const wids=new Set(d.weeks.map(w=>w.id));cur.weeks.forEach(w=>{if(!wids.has(w.id))d.weeks.push({id:w.id,del:true,u:t})});
-      d.weeks.forEach(w=>{const cw=cur.weeks.find(x=>x.id===w.id);if(cw&&w.items){const iids=new Set(w.items.map(i=>i.id));cw.items.forEach(i=>{if(!iids.has(i.id))w.items.push({id:i.id,del:true,u:t})})}})}
-    S.months[ui.undo.k]=d;ui.undo=null;save();render();$('#toast').classList.remove('show');toast('Desfeito')},
+    const U=ui.undo;[[U.k,U.data],...Object.entries(U.more||{})].forEach(([mk,js])=>restoreMonth(mk,js));
+    ui.undo=null;save();render();$('#toast').classList.remove('show');toast('Desfeito')},
   witem(el){const w=getM(ui.month).weeks.find(x=>x.id===el.dataset.w),it=w.items.find(x=>x.id===el.dataset.id);it.done=!it.done;it.u=now();w.u=now();stampMonth();save();render()},
   wall(el){const w=getM(ui.month).weeks.find(x=>x.id===el.dataset.w);snap();live(w.items).forEach(i=>{if(!i.done){i.done=true;i.u=now()}});stampMonth();save();render();toast('Semana finalizada ✓',true)},
   wadd(el){openItem(el.dataset.w,null)},
@@ -1027,7 +1085,7 @@ const ACT={
   delMonth(el){if(!getM(ui.month))return toast('Este mês não está aberto');if(!arm(el,'Toque de novo para excluir'))return;S.months[ui.month]={del:true,u:now()};save();render();toast(mName(ui.month)+' excluído')},
   resetAll(el){if(!arm(el,'Toque de novo: apaga tudo'))return;store.del(KEY);S=null;closeSheet();render()},
   checkUpd(){const m=$('#updMsg');m.textContent='Verificando…';
-    fetch(APP.info+'?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{
+    getInfo().then(j=>{
       meta.updChk=now();meta.newVer=needApk(j)?j:null;store.set(KMETA,meta);
       if(window.FamBridge&&FamBridge.checkUpdate){window.__applyNow=true;FamBridge.checkUpdate()}
       if(needApk(j)){m.innerHTML='Nova versão <b>'+esc(j.version)+'</b> disponível'+(j.notes?': '+esc(j.notes):'')+'. <button class="lnk" data-act="openApk">Baixar agora</button>'}
@@ -1123,8 +1181,9 @@ async function syncNow(manual){
   try{for(let i=0;i<4;i++){
       const tk=await idToken();let r=await fetch(docUrl(),{headers:{Authorization:'Bearer '+tk},cache:'no-store'});
       let remote=null,ut=null;if(r.status===200){const j=await r.json();ut=j.updateTime;try{remote=normalize(JSON.parse(j.fields.data.stringValue))}catch(e){remote=null}}else if(r.status!==404)throw new Error('HTTP '+r.status);
-      const merged=remote?mergeState(remote,S):S,ms=JSON.stringify(merged);
+      const merged=remote?mergeState(remote,S):S;let ms=JSON.stringify(merged);
       if(ms!==JSON.stringify(S)){S=merged;save(true);if(!sheetOpen())render()}
+      if(!meta.mig1&&runMigration()){ms=JSON.stringify(S);if(!sheetOpen())render()}
       if(remote&&ms===JSON.stringify(remote))break;
       const q='?updateMask.fieldPaths=data&updateMask.fieldPaths=at&'+(ut?'currentDocument.updateTime='+encodeURIComponent(ut):'currentDocument.exists=false');
       r=await fetch(docUrl()+q,{method:'PATCH',headers:{Authorization:'Bearer '+tk,'Content-Type':'application/json'},body:JSON.stringify({fields:{data:{stringValue:ms},at:{timestampValue:new Date().toISOString()}}})});
@@ -1137,13 +1196,15 @@ window.famResume=()=>{if(S&&!getM(curKey())&&Object.keys(S.months).length){ensur
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')window.famResume()});
 window.addEventListener('online',()=>syncNow());
 setInterval(()=>{if(document.visibilityState==='visible')syncNow()},30000);
+document.addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('details.acc')){ui.acc=ui.acc||{};ui.acc[d.dataset.k]=d.open}},true);
 window.famBack=()=>{if(sheetOpen()){closeSheet();return true}if(ui.tab!=='meses'){ui.tab='meses';render();scrollTo(0,0);return true}if(ui.month!==curKey()){ui.month=curKey();render();return true}return false};
 
 /* ================= Início ================= */
 (function init(){
   const saved=store.get(KEY);S=saved?normalize(saved):null;
   if(!S&&window.FAM_SEED&&window.FAM_AUTOSEED){S=normalize(JSON.parse(JSON.stringify(window.FAM_SEED)))}
-  if(S){if(!getM(curKey())&&Object.keys(S.months).some(k=>getM(k)))ensureMonth(curKey());else save(true)}
+  if(S){if(!auth)runMigration();
+    if(!getM(curKey())&&Object.keys(S.months).some(k=>getM(k)))ensureMonth(curKey());else save(true)}
   render(); if(auth)syncNow(); checkUpdateAuto(false);
   try{if(window.FamBridge&&FamBridge.storeOk)FamBridge.storeOk(!!localStorage.getItem(KEY))}catch(e){}
   try{if(window.FamBridge&&FamBridge.webOk)FamBridge.webOk(APP.build)}catch(e){}
