@@ -12,7 +12,9 @@ SEED={'app':'FAMCONT','v':1,'data':{'v':1,'cfg':{'renda':10000,'people':['Famíl
  'months':{'2026-11':{'u':U,'bills':[bill(1,'Aluguel','moradia',10,2000),bill(2,'Luz','energia',20,180),bill(3,'Internet','telecom',25,120,status='pago',paidAt='2026-11-05'),
    bill(4,'Mesada','filhos',None,10,'semanal'),bill(5,'Viagem','eventos',15,None,'unica','futuro'),bill(6,'Seguro','seguro',None,90)],
   'weeks':[{'id':'w1','u':U,'start':'2026-11-02','end':'2026-11-06','items':[{'id':'i1','u':U,'name':'Transporte','amount':50,'done':True}]},
-           {'id':'w2','u':U,'start':'2026-11-09','end':'2026-11-13','items':[{'id':'i2','u':U,'name':'Transporte','amount':50,'done':False}]}]}},
+           {'id':'w2','u':U,'start':'2026-11-09','end':'2026-11-13','items':[{'id':'i2','u':U,'name':'Transporte','amount':50,'done':False}]},
+           {'id':'w3','u':U,'start':'2026-11-16','end':'2026-11-20','items':[{'id':'i3','u':U,'name':'Transporte','amount':50,'done':False}]},
+           {'id':'w4','u':U,'start':'2026-11-23','end':'2026-11-27','items':[{'id':'i4','u':U,'name':'Transporte','amount':50,'done':False}]}]}},
  'fam':[{'id':'f1','u':U,'pessoa':'Parente A','desc':'Compra teste','origem':'Cartão do parente','compra':'2026-08-01','parcela':500,'n':4,'inicio':'2026-09','dia':5,
    'pixTipo':'CPF','pixChave':'529.982.247-25','banco':'Banco X','obs':'','pagos':{'2026-09':True,'2026-10':True,'2026-11':True},'fim':False}]}}
 R=[]
@@ -38,7 +40,7 @@ async def main():
                 sw=await pg.evaluate('document.documentElement.scrollWidth')
                 if sw>w+1: over.append(f'{t}:{sw}')
             sub=await pg.evaluate("(()=>{const e=document.querySelector('.brand small');return e.scrollWidth<=e.clientWidth+1})()")
-            ok(f'[{nome}] 6 abas abrem sem erro de JavaScript',not errs,errs[:2]); ok(f'[{nome}] nada vaza para os lados',not over,over); ok(f'[{nome}] subtítulo Martins&Costa cabe inteiro',sub)
+            ok(f'[{nome}] 6 abas abrem sem erro de JavaScript',not errs,errs[:2]); ok(f'[{nome}] nada vaza para os lados',not over,over); ok(f'[{nome}] subtítulo "Família Martins" cabe inteiro',sub)
             await ctx.close()
         # ---------- fluxos completos (Pixel 9) ----------
         ctx=await br.new_context(viewport={'width':412,'height':915},has_touch=True,locale='pt-BR',permissions=['clipboard-read','clipboard-write']); pg=await ctx.new_page(); errs=[]
@@ -47,11 +49,24 @@ async def main():
         await pg.goto(url); await pg.wait_for_timeout(500)
         ev=lambda js: pg.evaluate(js)
         ok('Abre na tela Meses (mês atual + próximos 6)',await pg.query_selector('.hero') is not None and len(await pg.query_selector_all('.mgrid .mc.fut'))==6)
-        prev=await pg.inner_text('.mgrid .mc.fut >> nth=0'); ok('Previsão de dezembro inclui contas fixas e familiares',('Previsão' in prev and '500' in prev),prev.replace(chr(10),' | '))
+        prev=await pg.inner_text('.mgrid .mc.fut >> nth=0'); ok('Cartão de dezembro compacto: nome, Previsão e familiares, sem valores',('Dezembro' in prev and 'Previsão' in prev and '1 familiar' in prev and 'R$' not in prev),prev.replace(chr(10),' | '))
+        ms=await pg.inner_text('#view'); ok('Tela Meses não mostra nenhum valor em R$',('R$' not in ms),ms[:120])
         await pg.click('.hero'); ok('Tocar no mês atual entra nas contas',await pg.query_selector('.progt') is not None)
         await pg.click('#ml'); ok('Tocar no nome do mês volta para Meses',await pg.query_selector('.hero') is not None)
         await pg.click('.hero')
-        ok('Cabeçalho: "Contas da Família Martins&Costa"',(await pg.inner_text('.brand small'))=='Contas da Família Martins&Costa')
+        ok('Cabeçalho: "Família Martins"',(await pg.inner_text('.brand small'))=='Família Martins')
+        ok('Contas: sem a fileira de pessoas (Família, Henrique…)',await pg.query_selector('[data-act=pessoa]') is None)
+        v0=await pg.inner_text('.sum .big'); await pg.click('.sum [data-act=eye]'); v1=await pg.inner_text('.sum .big'); vt=await pg.inner_text('#view')
+        ok('Olhinho esconde todos os valores',('•••' in v1 and 'R$ 1' not in vt and 'R$ 9' not in vt and 'R$ 5' not in vt),(v0,v1))
+        await pg.click('.tabs [data-tab=familia]'); ff=await pg.inner_text('#view'); ok('Olhinho vale também em Familiares',('•••' in ff and 'R$ 5' not in ff))
+        ok('Familiares: sem a lista "Programado para o mês"',('Programado para' not in ff))
+        await pg.click('.tabs [data-tab=resumo]'); rr=await pg.inner_text('#view'); ok('Resumo compacto: frase, Pago/Falta/Atraso e Por grupo',all(x in rr for x in ('pagamentos','Pago','Falta pagar','Em atraso','Por grupo','Contas fixas','Semanas dos filhos')) and '•••' in rr,rr[:160])
+        await pg.click('[data-act=eye]'); await pg.click('.tabs [data-tab=contas]'); v2=await pg.inner_text('.sum .big'); ok('Olhinho de novo mostra os valores',v2==v0,(v0,v2))
+        await pg.click('.tabs [data-tab=semanas]'); wk=await ev("[...document.querySelectorAll('.wgrid .wk')].map(e=>e.closest('details')?'F':'A')")
+        ws=await ev("[...document.querySelectorAll('.wgrid > *')].map(e=>e.innerText.split(String.fromCharCode(10))[0])")
+        top=await pg.inner_text('.wgrid .week >> nth=0'); ok('Semanas: a semana da vez (16 a 20/11) fica em cima',('Esta semana' in top and 'Semana 3' in top),top[:60])
+        ok('Semanas: finalizadas vão para o fim (recolhidas)',await ev("(()=>{const d=document.querySelector('details.fin');return !d||[...document.querySelectorAll('.week')].indexOf(d.querySelector('.week'))>0})()"))
+        await pg.click('.tabs [data-tab=contas]')
         st=await ev("['b1','b2','b3','b5'].map(id=>status(getM('2026-11').bills.find(b=>b.id===id),'2026-11').k)")
         ok('Situações: atrasada (dia 10), vence logo (dia 20), paga, planejada',st==['atrasado','logo','pago','futuro'],st)
         ok('Aviso de nova versão aparece no topo',await pg.query_selector('.banner[data-act=openApk]') is not None)
@@ -70,7 +85,7 @@ async def main():
         ok('Semanas de dezembro corretas',d['w']==['01-04','07-11','14-18','21-25','28-31'],d['w'])
         hi=await pg.inner_text('.famhi .fn'); ok('Destaque contas familiares: dezembro = 1',hi=='1',hi)
         await pg.click('[data-act=next]'); hi=await pg.inner_text('.famhi .fn'); ok('Destaque contas familiares: janeiro = 0',hi=='0',hi)
-        await pg.click('[data-act=prev]'); await pg.click('.tabs [data-tab=familia]'); await pg.click('.bill[data-id=f1]')
+        await pg.click('[data-act=prev]'); await pg.click('.tabs [data-tab=familia]'); await pg.click('.mline [data-act=famPay][data-id=f1]')
         ok('Pagar última parcela finaliza o compromisso',await ev("famState(S.fam.find(a=>a.id==='f1')).k")=='pago')
         await pg.click('#toastBtn'); await pg.click('.pxk button'); c=await ev('navigator.clipboard.readText()')
         ok('Copiar PIX copia só os números do CPF',c=='52998224725',c)
@@ -83,7 +98,7 @@ async def main():
         ok('Novo compromisso com chave Celular e meses gerados',f2==['Celular','(21) 99876-5432',['2027-01','2027-02','2027-03']],f2)
         await pg.click('[data-act=next]'); await pg.click('[data-act=next]'); hi=await ev("famMonth('2027-01').length"); ok('Janeiro passa a mostrar 1 depois de incluir',hi==1,hi)
         # fechamento do mês
-        await pg.click('[data-act=goHome]'); await pg.click('.hero'); await pg.click('.tabs [data-tab=resumo]'); await pg.click('.banner[data-act=fech]'); await pg.wait_for_timeout(150)
+        await pg.click('[data-act=goHome]'); await pg.click('.hero'); await pg.click('.tabs [data-tab=resumo]'); await pg.click('#view [data-act=fech]'); await pg.wait_for_timeout(150)
         t=await pg.inner_text('#sheetCard'); ok('Prévia do fechamento abre no Resumo',('Prévia do fechamento' in t and 'Contas fixas' in t and 'Contas familiares' in t),t[:80])
         await pg.click('.sheet-bg',position={'x':5,'y':5})
         fz=await ev("(()=>{const c=closeState('2026-11');return [c.ok,c.pend]})()"); ok('Fechamento conta as pendências do mês',fz[0]==False and fz[1]>0,fz)
