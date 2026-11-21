@@ -364,7 +364,7 @@ body.home #fab{display:none!important}
 <script>
 'use strict';
 /* ================= Configuração ================= */
-const APP={name:'CONTAS',version:'1.6.0',build:9,repo:'hocconsultor-HOC/famcont'};
+const APP={name:'CONTAS',version:'1.6.1',build:10,repo:'hocconsultor-HOC/famcont'};
 APP.apk='https://github.com/'+APP.repo+'/releases/download/app-android/FAMCONT.apk';
 APP.info='https://raw.githubusercontent.com/'+APP.repo+'/main/version.json';
 const FB={apiKey:'AIzaSyDsuh0H-KtQcDOBVQ8WrcGUelo95fImzT8',projectId:'famcont-44007',googleClient:'207577892432-fmd40r5cfriqngh0cipbu3gsr7aumb7o.apps.googleusercontent.com'}; // nuvem (Firebase · projeto FAMCONT, chave pública; a segurança é feita pelas regras do banco)
@@ -1029,7 +1029,7 @@ const ACT={
   checkUpd(){const m=$('#updMsg');m.textContent='Verificando…';
     fetch(APP.info+'?t='+now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(j=>{
       meta.updChk=now();meta.newVer=needApk(j)?j:null;store.set(KMETA,meta);
-      if(window.FamBridge&&FamBridge.checkUpdate)FamBridge.checkUpdate();
+      if(window.FamBridge&&FamBridge.checkUpdate){window.__applyNow=true;FamBridge.checkUpdate()}
       if(needApk(j)){m.innerHTML='Nova versão <b>'+esc(j.version)+'</b> disponível'+(j.notes?': '+esc(j.notes):'')+'. <button class="lnk" data-act="openApk">Baixar agora</button>'}
       else if((j.build||0)>APP.build)m.innerHTML='Nova versão <b>'+esc(j.version)+'</b> sendo baixada… Aguarde 10 segundos, <b>feche o app e abra de novo</b>.';
       else m.textContent='Você já está na versão mais recente ✓';}).catch(()=>{m.innerHTML='Não foi possível verificar agora. <button class="lnk" data-act="openApk">Abrir link de download</button>'})},
@@ -1132,7 +1132,7 @@ async function syncNow(manual){
     syncSt={st:'ok',at:now()};auth.at=syncSt.at;store.set(KAUTH,auth);if(manual)toast('Sincronizado ✓')}
   catch(e){syncSt.st=(e.message==='Failed to fetch'||!navigator.onLine)?'offline':'err';if(manual)toast(syncSt.st==='offline'?'Sem internet. As mudanças ficam salvas aqui e sobem depois.':'Erro ao sincronizar ('+e.message+')')}
   syncing=false;renderSync();if(ui.tab==='ajustes'&&!sheetOpen()&&manual)render()}
-window.famWebUpdate=v=>{if(performance.now()<20000&&!sheetOpen()){FamBridge.reloadApp()}else{toast('Atualização '+v+' pronta. Será aplicada ao reabrir o app.')}};
+window.famWebUpdate=v=>{if((window.__applyNow||performance.now()<20000)&&!sheetOpen()){toast('Instalando a versão '+v+'…');setTimeout(()=>FamBridge.reloadApp(),900)}else{toast('Atualização '+v+' pronta. Será aplicada ao reabrir o app.')}};
 window.famResume=()=>{if(S&&!getM(curKey())&&Object.keys(S.months).length){ensureMonth(curKey())}render();syncNow();checkUpdateAuto(false);if(meta.driveOn&&hasBridge()&&(!meta.driveLast||now()-meta.driveLast>6*3600e3))driveWrite(false)};
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')window.famResume()});
 window.addEventListener('online',()=>syncNow());
@@ -1145,6 +1145,7 @@ window.famBack=()=>{if(sheetOpen()){closeSheet();return true}if(ui.tab!=='meses'
   if(!S&&window.FAM_SEED&&window.FAM_AUTOSEED){S=normalize(JSON.parse(JSON.stringify(window.FAM_SEED)))}
   if(S){if(!getM(curKey())&&Object.keys(S.months).some(k=>getM(k)))ensureMonth(curKey());else save(true)}
   render(); if(auth)syncNow(); checkUpdateAuto(false);
+  try{if(window.FamBridge&&FamBridge.storeOk)FamBridge.storeOk(!!localStorage.getItem(KEY))}catch(e){}
   try{if(window.FamBridge&&FamBridge.webOk)FamBridge.webOk(APP.build)}catch(e){}
 })();
 </script>

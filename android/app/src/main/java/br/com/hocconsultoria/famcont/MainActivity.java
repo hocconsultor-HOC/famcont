@@ -36,10 +36,8 @@ import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.webkit.WebResourceResponse;
 import android.os.Handler;
 import android.os.Looper;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -61,6 +59,8 @@ public class MainActivity extends Activity {
     // ===== Atualização automática do app (sem baixar APK): baixa a versão nova da tela e usa na próxima abertura =====
     private static final String ASSET_URL = "file:///android_asset/index.html";
     private static final String REMOTE_URL = "https://raw.githubusercontent.com/hocconsultor-HOC/famcont/main/web/index.html";
+    // API do GitHub: entrega o arquivo novo na hora (o endereço raw guarda cópia por até 5 minutos)
+    private static final String API_URL = "https://api.github.com/repos/hocconsultor-HOC/famcont/contents/web/index.html?ref=main";
     private static final String MARKER = "FAMCONT-APP";
     private int bundledBuild = -1;
     private volatile int runningBuild = -1;
@@ -85,13 +85,12 @@ public class MainActivity extends Activity {
         lastCheck = t;
         new Thread(() -> {
             try {
-                HttpURLConnection c = (HttpURLConnection) new URL(REMOTE_URL + "?t=" + t).openConnection();
-                c.setConnectTimeout(8000); c.setReadTimeout(20000); c.setUseCaches(false);
-                if (c.getResponseCode() != 200) return;
-                byte[] data; try (InputStream in = c.getInputStream()) { data = readAll(in); }
+                byte[] data = fetch(API_URL, true);
+                if (data == null) data = fetch(REMOTE_URL + "?t=" + t, false);
+                if (data == null) return;
                 String html = new String(data, StandardCharsets.UTF_8);
                 int b = buildOf(html);
-                if (b > Math.max(runningBuild, bundled()) && html.contains(MARKER) && html.trim().endsWith("</html>")) {
+                if (b > Math.max(runningBuild, bundled()) && b != prefs.getInt("badBuild", -1) && html.contains(MARKER) && html.trim().endsWith("</html>")) {
                     File f = webFile(); File dir = f.getParentFile(); if (dir != null) dir.mkdirs();
                     File tmp = new File(f.getPath() + ".tmp");
                     try (FileOutputStream o = new FileOutputStream(tmp)) { o.write(data); }
@@ -102,6 +101,41 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) { }
         }).start();
     }
+    private static byte[] fetch(String url, boolean api) {
+        try {
+            HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
+            c.setConnectTimeout(8000); c.setReadTimeout(20000); c.setUseCaches(false);
+            c.setRequestProperty("Cache-Control", "no-cache");
+            if (api) { c.setRequestProperty("Accept", "application/vnd.github.raw"); c.setRequestProperty("User-Agent", "CONTAS-app"); }
+            if (c.getResponseCode() != 200) return null;
+            try (InputStream in = c.getInputStream()) { return readAll(in); }
+        } catch (Exception e) { return null; }
+    }
+    // Abre a tela: a versão baixada (se for mais nova e válida) ou a que veio instalada.
+    // Usa o MESMO endereço da versão instalada, então os dados do aparelho continuam os mesmos.
+    private void loadApp() {
+        servedCached = false; runningBuild = bundled();
+        try {
+            File f = webFile();
+            if (f.exists()) {
+                byte[] data; try (InputStream in = new java.io.FileInputStream(f)) { data = readAll(in); }
+                String html = new String(data, StandardCharsets.UTF_8);
+                int b = buildOf(html);
+                if (b > bundled() && html.contains(MARKER) && html.trim().endsWith("</html>")) {
+                    runningBuild = b; servedCached = true; okBuild = -1;
+                    web.loadDataWithBaseURL(ASSET_URL, html, "text/html", "utf-8", ASSET_URL);
+                    final int expected = b;
+                    // rede de segurança: se a versão baixada não abrir direito em 12 s, volta para a instalada
+                    ui.postDelayed(() -> { if (servedCached && runningBuild == expected && okBuild != expected) rollback(); }, 12000);
+                    return;
+                }
+                f.delete(); // versão antiga ou inválida: descarta
+            }
+        } catch (Exception ignored) { }
+        web.loadUrl(ASSET_URL);
+    }
+    private void rollback() { prefs.edit().putInt("badBuild", runningBuild).apply(); webFile().delete(); servedCached = false; runningBuild = bundled(); web.loadUrl(ASSET_URL); }
+
     private int dp(int x) { return Math.round(x * getResources().getDisplayMetrics().density); }
 
     @Override
@@ -142,37 +176,9 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(new Bridge(), "FamBridge");
         web.setWebViewClient(new WebViewClient() {
             @Override
-            public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest req) {
-                if (ASSET_URL.equals(req.getUrl().toString())) {
-                    try {
-                        File f = webFile();
-                        if (f.exists()) {
-                            byte[] data; try (InputStream in = new java.io.FileInputStream(f)) { data = readAll(in); }
-                            String html = new String(data, StandardCharsets.UTF_8);
-                            int b = buildOf(html);
-                            if (b > bundled() && html.contains(MARKER)) {
-                                runningBuild = b; servedCached = true;
-                                return new WebResourceResponse("text/html", "utf-8", new ByteArrayInputStream(data));
-                            }
-                        }
-                    } catch (Exception ignored) { }
-                    runningBuild = bundled(); servedCached = false;
-                }
-                return null;
-            }
-            @Override
             public void onPageFinished(WebView view, String url) {
                 view.evaluateJavascript(insetJs, null);
-                if (ASSET_URL.equals(url)) {
-                    // rede de segurança: se a versão baixada não abrir direito, volta para a versão instalada
-                    if (servedCached) {
-                        final int expected = runningBuild;
-                        ui.postDelayed(() -> {
-                            if (servedCached && okBuild != expected) { webFile().delete(); servedCached = false; web.loadUrl(ASSET_URL); }
-                        }, 12000);
-                    }
-                    checkWebUpdate(false);
-                }
+                checkWebUpdate(false);
             }
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest req) {
@@ -196,10 +202,9 @@ public class MainActivity extends Activity {
                 return true;
             }
         });
-        if (state != null) web.restoreState(state); else web.loadUrl("file:///android_asset/index.html");
+        loadApp();
     }
 
-    @Override protected void onSaveInstanceState(Bundle out) { super.onSaveInstanceState(out); web.saveState(out); }
 
     @Override protected void onResume() {
         super.onResume();
@@ -300,8 +305,19 @@ public class MainActivity extends Activity {
         @JavascriptInterface
         public void webOk(int build) { okBuild = build; }
 
+        // rede de segurança dos dados: se a versão baixada não enxergar os dados que o aparelho já tinha, volta para a instalada
         @JavascriptInterface
-        public void reloadApp() { ui.post(() -> web.loadUrl(ASSET_URL)); }
+        public void storeOk(boolean has) {
+            if (has) { if (!prefs.getBoolean("hadData", false)) prefs.edit().putBoolean("hadData", true).apply(); }
+            else if (!servedCached) prefs.edit().putBoolean("hadData", false).apply(); // aparelho zerado de propósito
+            else if (prefs.getBoolean("hadData", false)) ui.post(MainActivity.this::rollback);
+        }
+
+        @JavascriptInterface
+        public int runningBuild() { return runningBuild; }
+
+        @JavascriptInterface
+        public void reloadApp() { ui.post(MainActivity.this::loadApp); }
 
         @JavascriptInterface
         public void checkUpdate() { checkWebUpdate(true); }
